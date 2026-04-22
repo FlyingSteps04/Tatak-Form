@@ -212,17 +212,15 @@
     </div>
 
     <div id="deleteOfficerModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content modal-content-centered">
-            <div class="modal-body">
-                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    <i class="fas fa-user-minus"></i>
-                </div>
-                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Remove Officer</h2>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This will revoke all administrative access for this officer.</p>
-                <div class="modal-footer-centered">
-                    <button id="confirmDeleteOfficerBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Remove</button>
-                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteOfficerModal')">Cancel</button>
-                </div>
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-user-minus"></i>
+            </div>
+            <h2>Remove Officer</h2>
+            <p>Are you sure? This will revoke all administrative <br>access for <strong>this officer</strong>.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayBtnOfficer" class="btn-cancel-modal" onclick="closeModal('deleteOfficerModal')">Cancel</button>
+                <button id="confirmDeleteOfficerBtn" class="btn-confirm-logout">Yes, Remove</button>
             </div>
         </div>
     </div>
@@ -299,17 +297,15 @@
     </div>
 
     <div id="deleteOrgModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content modal-content-centered">
-            <div class="modal-body">
-                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    <i class="fas fa-trash-alt"></i>
-                </div>
-                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Organization</h2>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This action is permanent and will remove all associated data.</p>
-                <div class="modal-footer-centered">
-                    <button id="confirmDeleteOrgBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
-                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteOrgModal')">Cancel</button>
-                </div>
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h2>Delete Org?</h2>
+            <p>Are you sure? This action is permanent and <br>will remove <strong>all associated data</strong>.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayBtnOrg" class="btn-cancel-modal" onclick="closeModal('deleteOrgModal')">Cancel</button>
+                <button id="confirmDeleteOrgBtn" class="btn-confirm-logout">Yes, Delete</button>
             </div>
         </div>
     </div>
@@ -407,17 +403,15 @@
     </div>
 
     <div id="deleteEventModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content modal-content-centered">
-            <div class="modal-body">
-                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    <i class="fas fa-trash-alt"></i>
-                </div>
-                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Event</h2>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This action cannot be undone and will remove all attendance records.</p>
-                <div class="modal-footer-centered">
-                    <button id="confirmDeleteEventBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
-                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteEventModal')">Cancel</button>
-                </div>
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <h2>Delete Event?</h2>
+            <p>Are you sure? This action will remove <br><strong>all attendance records</strong> for this event.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayBtnEvent" class="btn-cancel-modal" onclick="closeModal('deleteEventModal')">Cancel</button>
+                <button id="confirmDeleteEventBtn" class="btn-confirm-logout">Yes, Delete</button>
             </div>
         </div>
     </div>
@@ -474,17 +468,15 @@
     </div>
 
     <div id="deleteStudentModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content modal-content-centered">
-            <div class="modal-body">
-                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    <i class="fas fa-user-slash"></i>
-                </div>
-                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Student</h2>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This will remove the student and all their attendance records from the system.</p>
-                <div class="modal-footer-centered">
-                    <button id="confirmDeleteStudentBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
-                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteStudentModal')">Cancel</button>
-                </div>
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <h2>Delete Student?</h2>
+            <p>Are you sure? This will remove the student <br>and <strong>all their records</strong> from the system.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayBtnStudent" class="btn-cancel-modal" onclick="closeModal('deleteStudentModal')">Cancel</button>
+                <button id="confirmDeleteStudentBtn" class="btn-confirm-logout">Yes, Delete</button>
             </div>
         </div>
     </div>

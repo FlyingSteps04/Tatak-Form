@@ -1,0 +1,31 @@
+{
+  "name": "sas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "npx nodemon server.js",
+    "seed:dummy": "node scripts/seedDummyUsers.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
+    "axios": "^1.14.0",
+    "bcryptjs": "^3.0.3",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.4",
+    "nodemon": "^3.1.14",
+    "qr-image": "^3.2.0",
+    "qrcode": "^1.5.4"
+  }
+}

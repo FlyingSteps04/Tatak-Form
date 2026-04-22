@@ -36,7 +36,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.openDeleteOrgModal = (id, name) => {
-        pendingDeleteOrgId = id;
+        const confirmBtn = document.getElementById('confirmDeleteOrgBtn');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.innerText = 'Deleting...';
+                confirmBtn.disabled = true;
+                try {
+                    const res = await window.TatakApi.apiRequest(`/organizations/${id}`, { method: 'DELETE' });
+                    if (res && res.success) {
+                        window.closeModal('deleteOrgModal');
+                        loadAdminOrganizations();
+                        window.TatakApi.showToast('Organization deleted successfully.', 'success');
+                    } else {
+                        window.TatakApi.showToast(res.error || 'Failed to delete organization.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error deleting org:', err);
+                    window.TatakApi.showToast('Failed to delete organization.', 'error');
+                } finally {
+                    confirmBtn.innerText = 'Yes, Delete';
+                    confirmBtn.disabled = false;
+                }
+            };
+        }
         window.openModal('deleteOrgModal');
     };
 
@@ -97,7 +119,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.openDeleteEventModal = (id) => {
-        pendingDeleteEventId = id;
+        const confirmBtn = document.getElementById('confirmDeleteEventBtn');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.innerText = 'Deleting...';
+                confirmBtn.disabled = true;
+                try {
+                    const res = await window.TatakApi.apiRequest(`/events/${id}`, { method: 'DELETE' });
+                    if (res && res.success) {
+                        window.closeModal('deleteEventModal');
+                        loadAdminEventsTable();
+                        window.TatakApi.showToast('Event deleted successfully.', 'success');
+                    } else {
+                        window.TatakApi.showToast(res.error || 'Failed to delete event.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error deleting event:', err);
+                    window.TatakApi.showToast('Failed to delete event.', 'error');
+                } finally {
+                    confirmBtn.innerText = 'Yes, Delete';
+                    confirmBtn.disabled = false;
+                }
+            };
+        }
         window.openModal('deleteEventModal');
     };
 
@@ -110,8 +154,37 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openModal('editOfficerModal');
     };
 
-    window.openDeleteOfficerModal = (id) => {
-        pendingDeleteOfficerId = id;
+    window.openDeleteOfficerModal = (officerId, userId) => {
+        const confirmBtn = document.getElementById('confirmDeleteOfficerBtn');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.innerText = 'Removing...';
+                confirmBtn.disabled = true;
+                try {
+                    // Step 1: Remove from officers table (Requires officer_id)
+                    await window.TatakApi.apiRequest(`/officers/${officerId}`, { method: 'DELETE' });
+                    
+                    // Step 2: Remove from users table (Requires user_id)
+                    try {
+                        if (userId) {
+                            await window.TatakApi.apiRequest(`/auth/users/${userId}`, { method: 'DELETE' });
+                        }
+                    } catch (userErr) {
+                        console.warn('Officer record removed, but user account might have other dependencies:', userErr.message);
+                    }
+
+                    window.closeModal('deleteOfficerModal');
+                    loadAdminOfficersTable();
+                    window.TatakApi.showToast('Officer and user account removed successfully.', 'success');
+                } catch (err) {
+                    console.error('Error removing officer:', err);
+                    window.TatakApi.showToast('Failed to remove officer: ' + err.message, 'error');
+                } finally {
+                    confirmBtn.innerText = 'Yes, Remove';
+                    confirmBtn.disabled = false;
+                }
+            };
+        }
         window.openModal('deleteOfficerModal');
     };
 
@@ -645,17 +718,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
                 }).join('');
                 
-                // Set Top Performer (using the one with most students)
+                // Set Top Performer (using the one with most events as primary, students as secondary)
                 const topOrg = [...orgs].sort((a,b) => {
-                    const aCount = students.filter(s => s.organization_id === a.organization_id).length;
-                    const bCount = students.filter(s => s.organization_id === b.organization_id).length;
-                    return bCount - aCount;
+                    const aEvents = events.filter(e => e.organization_id === a.organization_id).length;
+                    const bEvents = events.filter(e => e.organization_id === b.organization_id).length;
+                    if (bEvents !== aEvents) return bEvents - aEvents;
+                    
+                    const aStudents = students.filter(s => s.organization_id === a.organization_id).length;
+                    const bStudents = students.filter(s => s.organization_id === b.organization_id).length;
+                    return bStudents - aStudents;
                 })[0];
 
                 if (topOrg) {
                     const topCount = students.filter(s => s.organization_id === topOrg.organization_id).length;
                     const topEv = events.filter(e => e.organization_id === topOrg.organization_id).length;
-                    if(document.getElementById('top-org-name')) document.getElementById('top-org-name').innerText = topOrg.name.substring(0,3).toUpperCase();
+                    if(document.getElementById('top-org-name')) {
+                        // Use first 3 letters for the big logo, but handle short names
+                        const logoText = topOrg.name.includes(' ') 
+                            ? topOrg.name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0,3)
+                            : topOrg.name.substring(0,3).toUpperCase();
+                        document.getElementById('top-org-name').innerText = logoText;
+                    }
                     if(document.getElementById('top-org-full')) document.getElementById('top-org-full').innerText = topOrg.name;
                     if(document.getElementById('top-org-members')) document.getElementById('top-org-members').innerText = topCount;
                     if(document.getElementById('top-org-attendance')) document.getElementById('top-org-attendance').innerText = topEv;
@@ -706,8 +789,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td><span class="status-indicator-dot">● Active</span></td>
                             <td style="text-align: center;">
                                 <div class="action-icons" style="justify-content: center;">
-                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openEditOfficerModal('${off.user_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}')" title="Edit Officer"><i class="far fa-edit"></i></button>
-                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteOfficerModal('${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt"></i></button>
+                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openEditOfficerModal('${off.officer_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}')" title="Edit Officer"><i class="far fa-edit"></i></button>
+                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteOfficerModal('${off.officer_id}', '${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt"></i></button>
                                 </div>
                             </td>
                         </tr>`;
