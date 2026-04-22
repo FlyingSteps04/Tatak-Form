@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | UC Online Tatak Forms</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="login-split-page">
+
+    <div class="login-wrapper">
+        <div class="brand-hero">
+            <div class="brand-content">
+                <div class="brand-logo-row">
+                    <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="UC Logo" class="main-logo">
+                    <div class="brand-text">
+                        <strong class="app-name">Online Tatak Forms</strong>
+                        <span class="univ-name">University of Cebu</span>
+                    </div>
+                </div>
+                <h1 class="hero-title">Streamline Your <br><span class="text-gold">Event Attendance</span> <br>in SAS</h1>
+                <p class="brand-subtext">Secure, real-time attendance tracking and no manual stamps needed.</p>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <div class="white-login-card">
+                <a href="index.html" class="back-to-landing">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+                <div class="role-selector">
+                    <p class="label-small">SIGN IN AS</p>
+                    <div class="role-tabs" id="roleSelector">
+                        <button class="role-tab active" data-role="student">
+                            <i class="fas fa-user-graduate"></i> Student
+                        </button>
+                        <button class="role-tab" data-role="officer">
+                            <i class="fas fa-user-shield"></i> Officer
+                        </button>
+                        <button class="role-tab" data-role="admin">
+                            <i class="fas fa-user-lock"></i> Admin
+                        </button>
+                    </div>
+                </div>
+
+                <form class="actual-form" id="loginForm">
+                    <div class="input-field">
+                        <label id="usernameLabel">Username</label>
+                        <div class="input-wrapper">
+                            <i class="far fa-user input-icon"></i>
+                            <input type="text" id="usernameInput" placeholder="Enter your username" required>
+                        </div>
+                    </div>
+
+                    <div class="input-field">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="passwordInput" placeholder="Enter your password" required>
+                            <i class="far fa-eye toggle-password" id="togglePassword"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-signin">Sign In</button>
+                    
+                    <div class="form-footer-links">
+                        <a href="#" class="forgot-link">Forgot Password?</a>
+                    </div>
+                </form>
+
+                <div class="card-footer">
+                    <p>©University of Cebu. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-client.js?v=2"></script>
+    <script src="script.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Dashboard - UC Admin Access System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="officer.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="University Logo" class="logo">
+                <div class="logo-text">
+                    <strong>Officer DASHBOARD</strong>
+                    <span>ACCESS SYSTEM</span>
+                </div>
+            </div>
+
+            <div class="profile-widget">
+                <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Officer Avatar" class="widget-avatar">
+                <div class="widget-info">
+                    <p class="officer-name">Andrea Lim</p>
+                    <p class="officer-role">SSG - President Officer</p>
+                </div>
+            </div>
+            
+            <nav class="navigation">
+                <p class="nav-label">NAVIGATION</p>
+                <ul>
+                    <li class="nav-item active" id="nav-overview"><i class="fas fa-th-large"></i> Overview</li>
+                    <li class="nav-item" id="nav-events"><i class="fas fa-calendar-check"></i> Events</li>
+                    <li class="nav-item" id="nav-attendance"><i class="fas fa-users"></i> Attendance</li>
+                    <li class="nav-item" id="nav-reports"><i class="fas fa-chart-bar"></i> Reports</li>
+                    <li class="nav-item logout-item" id="sidebarLogout" role="button">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-bar">
+                <div class="welcome-text">
+                    <h1 id="dynamic-title">Hello, Officer</h1>
+                    <p>Friday, March 9, 2026 • 2nd Semester A.Y. 2025–2026</p>
+                </div>
+                <div class="top-icons">
+                    <div class="icon-circle"><i class="far fa-bell"></i></div>
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Profile" class="profile-avatar">
+                    <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
+                </div>
+            </header>
+
+            <section id="section-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number" id="officer-overview-total-events">...</span>
+                        <span class="stat-label">Total Events Handled</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="officer-overview-total-students">...</span>
+                        <span class="stat-label">Students Confirmed</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="officer-overview-total-reports">...</span>
+                        <span class="stat-label">Reports Generated</span>
+                    </div>
+                </div>
+
+                <div class="live-hero-card" id="officer-overview-hero-card">
+                    <div class="live-status-header">
+                        <div class="live-indicator">
+                            <span class="dot"></span> Live Attendance <span class="live-tag">Live</span>
+                        </div>
+                    </div>
+                    <h2 class="hero-title">Cultural Night 2026</h2>
+                    <p class="hero-subtitle">Mar 9 • Covered Court • SSG</p>
+                    <div class="hero-stats">
+                        <span class="current-count">247</span><span class="total-count">/400</span>
+                    </div>
+                    <div class="hero-progress-wrapper">
+                        <div class="hero-progress-bar">
+                            <div class="hero-progress-fill" style="width: 86.75%;"></div>
+                        </div>
+                        <p class="hero-progress-meta">86.75% confirmed • Just now</p>
+                    </div>
+                    <div class="hero-btn-group">
+                        <button class="btn-time-limit"><i class="far fa-clock"></i> Time Limit</button>
+                        <button class="btn-close-live"><i class="fas fa-times"></i> Close</button>
+                    </div>
+                </div>
+
+                <div class="dashboard-lists">
+                    <div class="list-container">
+                        <div class="list-header">
+                            <h3>My Events</h3>
+                            <a href="#" class="view-all-link" id="officer-overview-my-events-link">View all <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                        <div id="officer-overview-my-events">
+                            <div class="event-info">
+                                <h4>Cultural Night 2026</h4>
+                                <p>CAS • Covered Court • Mar 9, 6PM</p>
+                                <div class="mini-progress-bg">
+                                    <div class="mini-progress-fill" style="width: 86%;"></div>
+                                </div>
+                                <span class="mini-text">347 / 400</span>
+                            </div>
+                            <div class="event-badges">
+                                <span class="badge badge-open">Open</span>
+                                <span class="badge badge-closed">Close</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-container">
+                        <div class="list-header">
+                            <h3>Recent Check-ins</h3>
+                        </div>
+                        <div id="officer-overview-recent-checkins">
+                            <!-- populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-events" style="display: none;">
+                <div class="manage-events-header">
+                    <div class="title-group">
+                        <h2>Manage Event</h2>
+                        <p>Create, edit, or configure attendance</p>
+                    </div>
+                    <button class="btn-create-event"><i class="fas fa-plus"></i> Create New Event</button>
+                </div>
+
+                <div class="events-grid" id="officerEventsGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+            <section id="section-attendance" style="display: none;">
+                <!-- Attendance Section Header -->
+                <div class="att-section-header">
+                    <div class="att-title-group">
+                        <h2>Attendance Tracking</h2>
+                        <p>Monitor student attendance status for this event</p>
+                    </div>
+                    <!-- Event Selector -->
+                    <div class="att-event-selector-wrap">
+                        <i class="fas fa-calendar-alt"></i>
+                        <select name="event" id="eventSelect" class="att-event-select">
+                            <option value="" disabled selected>Select an event...</option>
+                        </select>
+                    </div>
+                    <!-- Search Bar -->
+                    <div class="att-search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search by name or ID..." id="studentSearch">
+                    </div>
+                </div>
+
+                <!-- Status Legend -->
+                <div class="att-legend">
+                    <span class="legend-item"><span class="legend-dot dot-present"></span> Present</span>
+                    <span class="legend-item"><span class="legend-dot dot-late"></span> Late</span>
+                    <span class="legend-item"><span class="legend-dot dot-absent"></span> Absent</span>
+                </div>
+
+                <!-- Directory-style Table -->
+                <div class="att-table-card">
+                    <table class="att-dir-table">
+                        <thead>
+                            <tr>
+                                <th>STUDENT</th>
+                                <th>ID NUMBER</th>
+                                <th>COURSE &amp; YEAR</th>
+                                <th>STATUS</th>
+                                <th>ATTENDANCE</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                    <div class="att-table-footer">
+                        <p id="attendanceFooterText">Loading attendance records...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Void Attendance Confirmation Modal -->
+            <div id="voidAttendanceModal" class="modal-overlay">
+                <div class="confirm-modal-content">
+                    <div class="logout-icon-container" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 style="margin-bottom: 10px; color: #1e293b;">Void Attendance?</h2>
+                    <p style="color: #64748b; font-size: 14px; line-height: 1.5;">
+                        Are you sure you want to void the attendance for <strong id="voidStudentName" style="color: #1e293b;">this student</strong>? 
+                        This action will mark them as "Absent" and can be tracked in audit logs.
+                    </p>
+                    <input type="hidden" id="voidAttendanceId">
+                    <div class="confirm-modal-buttons">
+                        <button id="cancelVoidBtn" class="btn-cancel-modal">Cancel</button>
+                        <button id="confirmVoidBtn" class="btn-confirm-logout" style="background: #f59e0b;">Yes, Void it</button>
+                    </div>
+                </div>
+            </div>
+
+            <section id="section-reports" style="display: none;">
+                <div class="reports-header-actions">
+                    <button class="btn-generate-main"><i class="fas fa-file-download"></i> Generate Report</button>
+                </div>
+
+                <div class="reports-stats-grid">
+                    <div class="report-stat-card">
+                        <span class="report-badge badge-done">Done</span>
+                        <div class="report-stat-content">
+                            <span class="big-number">3</span>
+                            <span class="stat-desc">Reports Generated</span>
+                        </div>
+                    </div>
+                    <div class="report-stat-card">
+                        <span class="report-badge badge-semester">This Semester</span>
+                        <div class="report-stat-content">
+                            <span class="big-number">18</span>
+                            <span class="stat-desc">Events Tracked</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="records-container">
+                    <h3 class="container-title">Record Reports</h3>
+                    
+                    <div class="record-item">
+                        <div class="record-details">
+                            <h4>Cultural Nights 2026</h4>
+                            <p>PDF • 347 students • Mar 9, 2026</p>
+                        </div>
+                        <button class="btn-generate-new">Generate New</button>
+                    </div>
+
+                    <div class="record-item">
+                        <div class="record-details">
+                            <h4>General Assembly</h4>
+                            <p>PDF • 298 students • Feb 15, 2026</p>
+                        </div>
+                        <button class="btn-download-record">Download</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="officerEventModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3 id="officerEventModalTitle">Create New Event</h3>
+                <p>Only admin-approved events can be opened for attendance.</p>
+                <button type="button" id="closeOfficerEventTopBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="officerEventForm" class="modal-body">
+                <input type="hidden" id="officerEventId" value="">
+                
+                <div class="form-group">
+                    <label>EVENT NAME</label>
+                    <input type="text" id="officerEventName" placeholder="e.g. Leadership Summit" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>DATE</label>
+                        <input type="date" id="officerEventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>VENUE</label>
+                        <select id="officerEventVenue" required>
+                            <option value="Covered Court">Covered Court</option>
+                            <option value="Auditorium">Auditorium</option>
+                            <option value="Gymnasium">Gymnasium</option>
+                            <option value="Function Hall">Function Hall</option>
+                            <option value="Classroom">Classroom</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>START TIME</label>
+                        <input type="time" id="officerEventStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>END TIME</label>
+                        <input type="time" id="officerEventEndTime" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>EXPECTED ATTENDANCE</label>
+                    <input type="number" id="officerEventCapacity" placeholder="400" required>
+                </div>
+
+                <div class="form-group">
+                    <label>DESCRIPTION</label>
+                    <textarea id="officerEventDesc" placeholder="Event description..." rows="2" style="resize: none;"></textarea>
+                </div>
+
+                <div class="modal-footer-grid">
+                    <button type="submit" id="saveOfficerEventBtn" class="btn-save-modal">Save Event</button>
+                    <button type="button" id="cancelOfficerEventBtn" class="btn-cancel-ghost">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="logoutModal" class="modal-overlay" style="display: none;">
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h2>Signout?</h2>
+            <p>You are sure you want to sign out of your <br><strong>UC Officer Account?</strong>.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayLoggedIn" class="btn-cancel-modal" onclick="closeModal('logoutModal')">Cancel</button>
+                <button id="confirmLogout" class="btn-confirm-logout">Sign out</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-client.js?v=2"></script>
+    <script src="officer.js?v=2"></script>
+</body>
+</html>

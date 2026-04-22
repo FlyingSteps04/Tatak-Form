@@ -1,0 +1,1253 @@
+/**
+ * Admin Dashboard Controller
+ * Handles navigation, data fetching, and UI rendering for the Admin portal.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- AUTH CHECK ---
+    const token = window.TatakApi.getAuthToken();
+    const role = localStorage.getItem('tatak_role');
+    
+    if (!token || role !== 'Admin') {
+        console.warn('Unauthorized access attempt. Redirecting to login.');
+        window.location.replace('login.html');
+        return;
+    }
+
+    // --- GLOBAL MODAL HELPERS ---
+    window.openModal = function(id) {
+        console.log('Opening modal:', id);
+        const modal = document.getElementById(id);
+        if(modal) modal.style.display = 'flex';
+    };
+
+    window.closeModal = function(id) {
+        const modal = document.getElementById(id);
+        if(modal) modal.style.display = 'none';
+    };
+
+    window.openEditOrgModal = (id, name, desc, status) => {
+        document.getElementById('editOrgOldId').value = id;
+        document.getElementById('editOrgId').value = id;
+        document.getElementById('editOrgName').value = name;
+        document.getElementById('editOrgDesc').value = desc;
+        document.getElementById('editOrgStatus').value = status;
+        window.openModal('editOrgModal');
+    };
+
+    window.openDeleteOrgModal = (id, name) => {
+        pendingDeleteOrgId = id;
+        window.openModal('deleteOrgModal');
+    };
+
+    window.openOverrideAttendanceModal = async (id, name) => {
+        const studentIdInput = document.getElementById('overrideStudentId');
+        const studentNameText = document.getElementById('overrideStudentName');
+        if (studentIdInput) studentIdInput.value = id;
+        if (studentNameText) studentNameText.innerText = `Overriding attendance for: ${name}`;
+        
+        // Populate events in the override modal
+        try {
+            const res = await window.TatakApi.apiRequest('/events');
+            const events = res.data || [];
+            const select = document.getElementById('overrideEventId');
+            if (select) {
+                select.innerHTML = '<option value="" disabled selected>Select an event...</option>' + 
+                    events.map(e => `<option value="${e.event_id}">${e.name}</option>`).join('');
+            }
+        } catch (err) {
+            console.error('Error loading events for override:', err);
+        }
+        
+        window.openModal('overrideAttendanceModal');
+    };
+
+    window.openDeleteStudentModal = (id) => {
+        const confirmBtn = document.getElementById('confirmDeleteStudentBtn');
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.innerText = 'Deleting...';
+                confirmBtn.disabled = true;
+                try {
+                    const res = await window.TatakApi.apiRequest(`/auth/users/${id}`, { method: 'DELETE' });
+                    if (res && res.success) {
+                        window.closeModal('deleteStudentModal');
+                        loadAdminStudentsTable();
+                    }
+                } catch (err) {
+                    console.error('Error deleting student:', err);
+                } finally {
+                    confirmBtn.innerText = 'Yes, Delete';
+                    confirmBtn.disabled = false;
+                }
+            };
+        }
+        window.openModal('deleteStudentModal');
+    };
+
+
+    window.openEditEventModal = (id, name, date, venue, start, end) => {
+        document.getElementById('editEventId').value = id;
+        document.getElementById('editEventName').value = name;
+        document.getElementById('editEventDate').value = date;
+        document.getElementById('editEventVenue').value = venue;
+        document.getElementById('editEventStartTime').value = start;
+        document.getElementById('editEventEndTime').value = end;
+        window.openModal('editEventModal');
+    };
+
+    window.openDeleteEventModal = (id) => {
+        pendingDeleteEventId = id;
+        window.openModal('deleteEventModal');
+    };
+
+    window.openEditOfficerModal = (id, name, orgId, role, status) => {
+        document.getElementById('editOfficerId').value = id;
+        document.getElementById('editOffName').value = name;
+        document.getElementById('editOffOrg').value = orgId;
+        document.getElementById('editOffRole').value = role;
+        document.getElementById('editOffStatus').value = status;
+        window.openModal('editOfficerModal');
+    };
+
+    window.openDeleteOfficerModal = (id) => {
+        pendingDeleteOfficerId = id;
+        window.openModal('deleteOfficerModal');
+    };
+
+    const contentDiv = document.getElementById('dynamic-content');
+    const mainTitle = document.getElementById('main-title');
+    const actionBtn = document.getElementById('action-btn');
+
+    // State management
+    let pendingDeleteEventId = null;
+    let pendingDeleteOfficerId = null;
+    let pendingDeleteOrgId = null;
+
+    window.showSection = function(section, element) {
+        // Update Active Navigation State
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        if (element) element.classList.add('active');
+
+        // Reset header to default
+        const header = document.querySelector('.dashboard-header');
+        header.classList.remove('header-dark');
+        
+        // Show action button by default
+        actionBtn.style.display = 'block';
+
+        if (section === 'overview') {
+            mainTitle.innerHTML = 'HELLO, <span class="highlight">ADMIN</span>';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> New Event';
+            actionBtn.onclick = () => openModal('addEventModal');
+            renderOverview();
+        } 
+        else if (section === 'events') {
+            mainTitle.innerText = 'Events Management';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Event';
+            actionBtn.onclick = () => openModal('addEventModal');
+            renderEvents();
+        }
+        else if (section === 'organization') {
+            mainTitle.innerText = 'Organization Management';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Organization';
+            actionBtn.onclick = () => openModal('addOrgModal');
+            renderOrganizations();
+        }
+        else if (section === 'officers') {
+            mainTitle.innerText = 'Officer Directory';
+            actionBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Officer';
+            actionBtn.onclick = () => openModal('addOfficerModal');
+            renderOfficers();
+        }
+        else if (section === 'students') {
+            mainTitle.innerText = 'Student Directory';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Student';
+            actionBtn.onclick = () => window.TatakApi.showToast('Add Student functionality coming soon', 'info');
+            renderStudents();
+        }
+        else if (section === 'reports') {
+            mainTitle.innerText = 'System Reports';
+            actionBtn.style.display = 'none';
+            renderReports();
+        }
+    };
+
+    // --- RENDER FUNCTIONS ---
+
+    function renderOverview() {
+        contentDiv.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon icon-blue"><i class="far fa-calendar"></i></div>
+                    <div class="stat-data"><span class="value" id="admin-total-events">...</span><p class="label">Total Events</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-purple"><i class="fas fa-user-graduate"></i></div>
+                    <div class="stat-data"><span class="value" id="admin-total-students">...</span><p class="label">Total Students</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-orange"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-data"><span class="value" id="admin-avg-attendance">...</span><p class="label">Avg Attendance</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-pink"><i class="fas fa-user-shield"></i></div>
+                    <div class="stat-data"><span class="value" id="admin-active-officers">...</span><p class="label">Active Officers</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-green"><i class="fas fa-university"></i></div>
+                    <div class="stat-data"><span class="value" id="admin-active-orgs">...</span><p class="label">Active Orgs</p></div>
+                </div>
+            </div>
+            <div class="content-grid">
+                <div class="chart-container">
+                    <h3>Monthly Attendance Rate</h3>
+                    <div class="chart-placeholder" id="admin-monthly-chart" style="display: flex; align-items: center; justify-content: center; min-height: 200px; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                        <p style="color: #64748b;">Loading chart data...</p>
+                    </div>
+                </div>
+                <div class="events-container">
+                    <h3>Upcoming Events</h3>
+                    <div class="event-list" id="admin-upcoming-events-list">
+                        <p style="padding: 20px; color: #64748b;">Loading events...</p>
+                    </div>
+                </div>
+            </div>`;
+        loadAdminOverviewMetrics();
+    }
+
+    function renderEvents() {
+        contentDiv.innerHTML = `
+            <div class="events-view">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-data"><span class="value" id="events-tab-total">...</span><p class="label">Total Events</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><i class="fas fa-user-graduate"></i></div>
+                        <div class="stat-data"><span class="value" id="events-tab-enrolled">...</span><p class="label">Students Enrolled</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="fas fa-university"></i></div>
+                        <div class="stat-data"><span class="value" id="events-tab-orgs">...</span><p class="label">Organizations</p></div>
+                    </div>
+                </div>
+                <div class="events-table-container" style="margin-bottom: 25px;">
+                    <div class="white-container table-section">
+                        <div class="container-header">
+                            <h3>All Events</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: center;">EVENT</th>
+                                        <th style="text-align: center;">ORG</th>
+                                        <th style="text-align: center;">DATE</th>
+                                        <th style="text-align: center;">VENUE</th>
+                                        <th style="text-align: center;">STATUS</th>
+                                        <th style="text-align: center;">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-events-table-body">
+                                    <tr><td colspan="6" style="text-align: center; padding: 20px;">Loading events...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="white-container coming-up-section">
+                    <div class="container-header">
+                        <h3>Coming Up</h3>
+                    </div>
+                    <div id="events-tab-coming-up" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        <p style="padding: 10px; color: #718096; font-size: 14px;">Loading...</p>
+                    </div>
+                </div>
+            </div>`;
+        loadAdminEventsTable();
+        populateOrgSelects();
+    }
+
+    function renderOrganizations() {
+        contentDiv.innerHTML = `
+            <div class="org-view">
+                <!-- Top Row: Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow-light" style="background: #fffbeb; color: #f59e0b;"><i class="fas fa-university"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-orgs-total">...</span>
+                            <p class="label">Total Organizations</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green-light" style="background: #f0fdf4; color: #22c55e;"><i class="fas fa-users"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-orgs-members">...</span>
+                            <p class="label">Active Members</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue-light" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-orgs-events">...</span>
+                            <p class="label">Total Events</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Split View -->
+                <div class="org-split-container">
+                    <!-- Left: All Organizations Grid -->
+                    <div class="org-left-side white-container">
+                        <h3 class="side-title">All Organizations</h3>
+                        <div class="org-cards-grid-2col" id="admin-orgs-container">
+                            <p style="padding: 20px; color: #64748b;">Loading organizations...</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Top Performing Org Card -->
+                    <div class="org-right-side">
+                        <div class="top-performer-card premium-shadow">
+                            <div class="top-label">TOP PERFORMING ORG</div>
+                            <div class="top-org-name" id="top-org-name">...</div>
+                            <div class="top-org-full" id="top-org-full">Loading...</div>
+                            <div class="top-performer-stats">
+                                <div class="top-stat">
+                                    <strong id="top-org-members">0</strong>
+                                    <span>MEMBERS</span>
+                                </div>
+                                <div class="top-stat">
+                                    <strong id="top-org-attendance">0</strong>
+                                    <span>EVENTS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        loadAdminOrganizations();
+    }
+
+    function renderOfficers() {
+        mainTitle.innerText = 'Officers';
+        actionBtn.innerText = '+ Add Officer';
+        actionBtn.style.display = 'block';
+        actionBtn.onclick = () => openModal('addOfficerModal');
+
+        contentDiv.innerHTML = `
+            <div class="officers-view">
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 800px;">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue-light" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-id-card"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-officers-total">25</span>
+                            <p class="label">Total Officers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green-light" style="background: #f0fdf4; color: #22c55e;"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-officers-active">18</span>
+                            <p class="label">Active Officers</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="white-container full-width">
+                    <div class="container-header">
+                        <h3>Officer Directory</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>OFFICER</th>
+                                    <th>POSITION</th>
+                                    <th>ORGANIZATION</th>
+                                    <th>TERM</th>
+                                    <th>STATUS</th>
+                                    <th style="text-align: center;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-officers-table-body">
+                                <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading officers...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>`;
+        loadAdminOfficersTable();
+        populateOrgSelects();
+    }
+
+    function renderStudents() {
+        mainTitle.innerText = 'Students';
+        actionBtn.innerText = '+ Add Student';
+        actionBtn.style.display = 'block';
+        actionBtn.onclick = () => alert('Add Student functionality coming soon');
+
+        contentDiv.innerHTML = `
+            <div class="students-view">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue-light" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-students-total">1,248</span>
+                            <p class="label">Total Students</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green-light" style="background: #f0fdf4; color: #22c55e;"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-students-enrolled">15,234</span>
+                            <p class="label">Enrolled</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow-light" style="background: #fffbeb; color: #f59e0b;"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-data">
+                            <span class="value" id="admin-students-attendance">92%</span>
+                            <p class="label">Avg Attendance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="white-container full-width">
+                    <div class="container-header">
+                        <h3>Student Directory</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>STUDENT</th>
+                                    <th>COURSE & YEAR</th>
+                                    <th>ORGANIZATION</th>
+                                    <th>ATTENDANCE</th>
+                                    <th style="text-align: center;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-students-table-body">
+                                <tr><td colspan="5" style="text-align: center; padding: 20px;">Loading students...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>`;
+        loadAdminStudentsTable();
+    }
+
+    function renderReports() {
+        contentDiv.innerHTML = `
+            <div class="reports-view">
+                <div class="white-container">
+                    <h3>System Analytics</h3>
+                    <p style="padding: 20px; color: #64748b;">Comprehensive reports and analytics dashboard is currently under maintenance. Please check back later.</p>
+                </div>
+            </div>`;
+    }
+
+    // --- DATA LOADING FUNCTIONS ---
+
+    async function loadAdminOverviewMetrics() {
+        try {
+            const [eventsRes, studentsRes, attendanceRes, officersRes, orgsRes] = await Promise.all([
+                window.TatakApi.apiRequest('/events'),
+                window.TatakApi.apiRequest('/auth/users'),
+                window.TatakApi.apiRequest('/attendance/summary'),
+                window.TatakApi.apiRequest('/officers'),
+                window.TatakApi.apiRequest('/organizations')
+            ]);
+
+            const events = eventsRes.data || [];
+            const students = (studentsRes.data || []).filter(u => u.role === 'Student');
+            const officers = officersRes.data || [];
+            const organizations = orgsRes.data || [];
+            const summary = attendanceRes.data || { total: 0, present_count: 0 };
+
+            if(document.getElementById('admin-total-events')) document.getElementById('admin-total-events').innerText = events.length;
+            if(document.getElementById('admin-total-students')) document.getElementById('admin-total-students').innerText = students.length;
+            if(document.getElementById('admin-active-officers')) document.getElementById('admin-active-officers').innerText = officers.length;
+            if(document.getElementById('admin-active-orgs')) document.getElementById('admin-active-orgs').innerText = organizations.length;
+            
+            const attendanceRate = summary.total > 0 ? Math.round((summary.present_count / summary.total) * 100) : 0;
+            if(document.getElementById('admin-avg-attendance')) document.getElementById('admin-avg-attendance').innerText = `${attendanceRate}%`;
+
+            const chartPlaceholder = document.getElementById('admin-monthly-chart');
+            if (chartPlaceholder) {
+                chartPlaceholder.innerHTML = `<p style="text-align: center; color: #10b981; font-weight: 700; font-size: 20px;">Overall System Attendance: ${attendanceRate}%</p>`;
+            }
+
+            const upcomingList = document.getElementById('admin-upcoming-events-list');
+            if (upcomingList) {
+                const now = new Date();
+                const upcoming = events.filter(e => new Date(e.start_date) > now)
+                    .sort((a,b) => new Date(a.start_date) - new Date(b.start_date))
+                    .slice(0, 3);
+                
+                if (upcoming.length === 0) {
+                    upcomingList.innerHTML = '<p style="padding: 20px; color: #64748b; text-align: center;">No upcoming events.</p>';
+                } else {
+                    upcomingList.innerHTML = upcoming.map(e => {
+                        const d = new Date(e.start_date);
+                        return `
+                            <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: white; border-radius: 12px; margin-bottom: 10px; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="background: #f8fafc; padding: 8px; border-radius: 8px; text-align: center; min-width: 50px; border: 1px solid #e2e8f0;">
+                                    <strong style="display: block; color: #1e3a8a; font-size: 16px;">${d.getDate()}</strong>
+                                    <span style="font-size: 10px; color: #64748b; text-transform: uppercase;">${d.toLocaleString('default', { month: 'short' })}</span>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: #1e293b; font-size: 14px;">${e.name}</h4>
+                                    <p style="margin: 2px 0 0; color: #64748b; font-size: 12px;"><i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i> ${e.location || 'TBA'}</p>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+            }
+        } catch (err) {
+            console.error('Error loading overview metrics:', err);
+        }
+    }
+
+    async function loadAdminEventsTable() {
+        const tableBody = document.getElementById('admin-events-table-body');
+        const comingUpContainer = document.getElementById('events-tab-coming-up');
+        if (!tableBody) return;
+
+        try {
+            const res = await window.TatakApi.apiRequest('/events');
+            const events = res.data || [];
+
+            if(document.getElementById('events-tab-total')) document.getElementById('events-tab-total').innerText = events.length;
+            
+            const [studentsRes, orgsRes] = await Promise.all([
+                window.TatakApi.apiRequest('/auth/users'),
+                window.TatakApi.apiRequest('/organizations')
+            ]);
+            if(document.getElementById('events-tab-enrolled')) document.getElementById('events-tab-enrolled').innerText = (studentsRes.data || []).filter(u => u.role === 'Student').length;
+            if(document.getElementById('events-tab-orgs')) document.getElementById('events-tab-orgs').innerText = (orgsRes.data || []).length;
+
+            if (events.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No events found.</td></tr>';
+            } else {
+                const organizations = orgsRes.data || [];
+                tableBody.innerHTML = events.map(event => {
+                    const now = new Date();
+                    const start = new Date(event.start_date);
+                    const end = event.end_date ? new Date(event.end_date) : new Date(start.getTime() + 4*60*60*1000);
+                    let status = 'Upcoming', statusCls = 'upcoming';
+                    if (now >= start && now <= end) { status = 'Ongoing'; statusCls = 'ongoing'; }
+                    else if (now > end) { status = 'Done'; statusCls = 'done'; }
+
+                    const orgName = event.organization_name || organizations.find(o => o.organization_id === event.organization_id)?.name || 'N/A';
+
+                    return `
+                        <tr>
+                            <td style="font-weight: 700; color: #1e293b;">${event.name}</td>
+                            <td><span class="badge-org">${orgName}</span></td>
+                            <td>${start.toLocaleDateString()}</td>
+                            <td>${event.location || 'TBA'}</td>
+                            <td><span class="status ${statusCls}">${status}</span></td>
+                            <td>
+                                <div class="action-icons" style="justify-content: center;">
+                                    <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${event.start_date.split('T')[0]}', '${(event.location || '').replace(/'/g, "\\'")}', '${new Date(event.start_date).toTimeString().slice(0,5)}', '${event.end_date ? new Date(event.end_date).toTimeString().slice(0,5) : ''}')" title="Edit Event"><i class="far fa-edit"></i></button>
+                                    <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            }
+
+            if (comingUpContainer) {
+                const now = new Date();
+                const upcoming = events.filter(e => new Date(e.start_date) > now)
+                    .sort((a,b) => new Date(a.start_date) - new Date(b.start_date))
+                    .slice(0, 3);
+                if (upcoming.length === 0) {
+                    comingUpContainer.innerHTML = '<p style="padding: 10px; color: #718096; font-size: 13px;">No upcoming events.</p>';
+                } else {
+                    comingUpContainer.innerHTML = upcoming.map(e => {
+                        const d = new Date(e.start_date);
+                        return `
+                            <div class="mini-event-card">
+                                <div class="date-badge"><strong>${d.getDate()}</strong><span>${d.toLocaleString('default', {month:'short'})}</span></div>
+                                <div class="mini-details"><h4>${e.name}</h4><p>${e.location || 'TBA'}</p></div>
+                            </div>`;
+                    }).join('');
+                }
+            }
+        } catch (err) {
+            console.error('Error loading events table:', err);
+        }
+    }
+
+    async function loadAdminOrganizations() {
+        const container = document.getElementById('admin-orgs-container');
+        if (!container) return;
+        try {
+            const [orgsRes, usersRes, eventsRes] = await Promise.all([
+                window.TatakApi.apiRequest('/organizations'),
+                window.TatakApi.apiRequest('/auth/users'),
+                window.TatakApi.apiRequest('/events')
+            ]);
+            
+            const orgs = orgsRes.data || [];
+            const students = (usersRes.data || []).filter(u => u.role === 'Student');
+            const events = eventsRes.data || [];
+
+            if(document.getElementById('admin-orgs-total')) document.getElementById('admin-orgs-total').innerText = orgs.length;
+            if(document.getElementById('admin-orgs-members')) document.getElementById('admin-orgs-members').innerText = students.length;
+            if(document.getElementById('admin-orgs-events')) document.getElementById('admin-orgs-events').innerText = events.length;
+            
+            if (orgs.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; color: #64748b; text-align: center;">No organizations found.</p>';
+            } else {
+                const colors = ['blue', 'purple', 'orange', 'green', 'teal', 'red', 'navy', 'maroon'];
+                container.innerHTML = orgs.map((org, i) => {
+                    const short = org.name.substring(0,3).toUpperCase();
+                    const color = colors[i % colors.length];
+                    const orgStudents = students.filter(s => s.organization_id === org.organization_id);
+                    const orgEvents = events.filter(e => e.organization_id === org.organization_id);
+
+                    return `
+                        <div class="org-mini-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: -5px;">
+                                <span class="org-id-badge" style="margin-bottom: 0;">ID: ${org.organization_id}</span>
+                                <span class="status-badge ${org.status || 'Active'}">${org.status || 'Active'}</span>
+                            </div>
+                            <div class="mini-card-header">
+                                <div class="org-logo-icon ${color}">${short}</div>
+                                <div class="mini-card-titles">
+                                    <h4>${org.name}</h4>
+                                    <p>${org.description || 'No description available.'}</p>
+                                </div>
+                            </div>
+                            <div class="mini-card-footer">
+                                <div class="mini-stat-group">
+                                    <div class="mini-stat">
+                                        <strong>${orgStudents.length}</strong>
+                                        <span>MEMBERS</span>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <strong>${orgEvents.length}</strong>
+                                        <span>EVENTS</span>
+                                    </div>
+                                </div>
+                                <div class="mini-card-actions">
+                                    <button class="btn-action-mini edit" onclick="window.openEditOrgModal('${org.organization_id}', '${org.name.replace(/'/g, "\\'")}', '${(org.description || '').replace(/'/g, "\\'")}', '${org.status || 'Active'}')" title="Edit"><i class="far fa-edit"></i></button>
+                                    <button class="btn-action-mini delete" onclick="window.openDeleteOrgModal('${org.organization_id}', '${org.name.replace(/'/g, "\\'")}')" title="Delete"><i class="far fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+                
+                // Set Top Performer (using the one with most students)
+                const topOrg = [...orgs].sort((a,b) => {
+                    const aCount = students.filter(s => s.organization_id === a.organization_id).length;
+                    const bCount = students.filter(s => s.organization_id === b.organization_id).length;
+                    return bCount - aCount;
+                })[0];
+
+                if (topOrg) {
+                    const topCount = students.filter(s => s.organization_id === topOrg.organization_id).length;
+                    const topEv = events.filter(e => e.organization_id === topOrg.organization_id).length;
+                    if(document.getElementById('top-org-name')) document.getElementById('top-org-name').innerText = topOrg.name.substring(0,3).toUpperCase();
+                    if(document.getElementById('top-org-full')) document.getElementById('top-org-full').innerText = topOrg.name;
+                    if(document.getElementById('top-org-members')) document.getElementById('top-org-members').innerText = topCount;
+                    if(document.getElementById('top-org-attendance')) document.getElementById('top-org-attendance').innerText = topEv;
+                }
+            }
+        } catch (err) {
+            console.error('Error loading orgs:', err);
+        }
+    }
+
+    async function loadAdminOfficersTable() {
+        const tbody = document.getElementById('admin-officers-table-body');
+        if (!tbody) return;
+        try {
+            const [offRes, orgsRes] = await Promise.all([
+                window.TatakApi.apiRequest('/officers'),
+                window.TatakApi.apiRequest('/organizations')
+            ]);
+            const officers = offRes.data || [];
+            const orgs = orgsRes.data || [];
+            
+            if(document.getElementById('admin-officers-total')) document.getElementById('admin-officers-total').innerText = officers.length;
+            if(document.getElementById('admin-officers-active')) document.getElementById('admin-officers-active').innerText = officers.length;
+
+            if (officers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: #64748b;">No officers found.</td></tr>';
+            } else {
+                tbody.innerHTML = officers.map(off => {
+                    const fullName = off.fname || 'Unknown Officer';
+                    const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
+                    const orgName = off.name || 'N/A';
+                    const position = off.role || 'Officer';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">${initials}</div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <strong style="color: #1e293b; font-size: 0.95rem;">${fullName}</strong>
+                                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${off.user_id || '---'}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge-pill-yellow">${position}</span></td>
+                            <td><span class="badge-org-blue">${orgName}</span></td>
+                            <td style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
+                            <td><span class="status-indicator-dot">● Active</span></td>
+                            <td style="text-align: center;">
+                                <div class="action-icons" style="justify-content: center;">
+                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openEditOfficerModal('${off.user_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}')" title="Edit Officer"><i class="far fa-edit"></i></button>
+                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteOfficerModal('${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            }
+        } catch (err) {
+            console.error('Error loading officers:', err);
+        }
+    }
+
+    async function loadAdminStudentsTable() {
+        const tbody = document.getElementById('admin-students-table-body');
+        if (!tbody) return;
+        try {
+            const [usersRes, orgsRes, attendanceRes] = await Promise.all([
+                window.TatakApi.apiRequest('/auth/users'),
+                window.TatakApi.apiRequest('/organizations'),
+                window.TatakApi.apiRequest('/attendance/summary')
+            ]);
+            const students = (usersRes.data || []).filter(u => u.role === 'Student');
+            const orgs = orgsRes.data || [];
+            const summary = attendanceRes.data || { total: 0, present_count: 0 };
+            
+            if(document.getElementById('admin-students-total')) document.getElementById('admin-students-total').innerText = students.length.toLocaleString();
+            if(document.getElementById('admin-students-enrolled')) document.getElementById('admin-students-enrolled').innerText = (students.length * 1.5).toFixed(0);
+            
+            const avgRate = summary.total > 0 ? Math.round((summary.present_count / summary.total) * 100) : 92;
+            if(document.getElementById('admin-students-attendance')) document.getElementById('admin-students-attendance').innerText = `${avgRate}%`;
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;">No students found.</td></tr>';
+            } else {
+                tbody.innerHTML = students.map(student => {
+                    const initials = (student.fname || '?').split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
+                    const course = student.course || 'BSIT - 3';
+                    const org = orgs.find(o => o.organization_id === student.organization_id)?.name || 'PSITS';
+                    const attendance = Math.floor(Math.random() * 25) + 75; // Mock 75-100%
+                    
+                    let barColor = 'green';
+                    if (attendance < 80) barColor = 'red';
+                    else if (attendance < 90) barColor = 'yellow';
+
+                    return `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <div style="width: 42px; height: 42px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: #475569; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">${initials}</div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <strong style="color: #1e293b; font-size: 0.95rem;">${student.fname}</strong>
+                                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${student.user_id || '---'}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge-pill-blue">${course}</span></td>
+                            <td><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${org}</span></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px; width: 160px;">
+                                    <div class="progress-container" style="flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; border: 1px solid #f1f5f9;">
+                                        <div class="progress-bar bar-${barColor}" style="width: ${attendance}%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.8rem; font-weight: 800; color: ${barColor === 'green' ? '#10b981' : barColor === 'yellow' ? '#f59e0b' : '#ef4444'};">${attendance}%</span>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="action-icons" style="justify-content: center;">
+                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openOverrideAttendanceModal('${student.user_id}', '${student.fname}')" title="Override Attendance"><i class="far fa-edit"></i></button>
+                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteStudentModal('${student.user_id}')" title="Delete Student"><i class="far fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            }
+        } catch (err) {
+            console.error('Error loading students:', err);
+        }
+    }
+
+    async function populateOrgSelects() {
+        try {
+            const res = await window.TatakApi.apiRequest('/organizations');
+            const orgs = res.data || [];
+            const selects = ['offOrg', 'editOffOrg', 'addEventOrg'];
+            const options = orgs.map(org => `<option value="${org.organization_id}">${org.name}</option>`).join('');
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = options || '<option disabled>No organizations available</option>';
+            });
+        } catch (err) {}
+    }
+
+    // --- FORM SUBMISSIONS ---
+
+    // Logout logic
+    const confirmLogout = document.getElementById('confirmLogout');
+    if (confirmLogout) {
+        confirmLogout.onclick = () => {
+            localStorage.removeItem('tatak_token');
+            localStorage.removeItem('tatak_role');
+            window.location.href = 'login.html';
+        };
+    }
+
+    // Add Organization
+    const addOrgForm = document.getElementById('addOrgForm');
+    if (addOrgForm) {
+        addOrgForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('addOrgId').value;
+            const name = document.getElementById('addOrgName').value;
+            const desc = document.getElementById('addOrgDesc').value;
+            const submitBtn = addOrgForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+            try {
+                const res = await window.TatakApi.apiRequest('/organizations', { 
+                    method: 'POST', body: JSON.stringify({ organization_id: id, name, description: desc, status: 'Active' }) 
+                });
+                if (res && res.success) {
+                    window.closeModal('addOrgModal');
+                    addOrgForm.reset();
+                    loadAdminOrganizations();
+                    window.TatakApi.showToast('Organization created successfully!', 'success');
+                } else { window.TatakApi.showToast(res?.error || 'Failed to create organization', 'error'); }
+            } catch (err) { window.TatakApi.showToast('An error occurred while creating the organization.', 'error'); }
+            finally { submitBtn.innerText = 'Save Organization'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Edit Organization
+    const editOrgForm = document.getElementById('editOrgForm');
+    if (editOrgForm) {
+        editOrgForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldId = document.getElementById('editOrgOldId').value;
+            const newId = document.getElementById('editOrgId').value;
+            const name = document.getElementById('editOrgName').value;
+            const desc = document.getElementById('editOrgDesc').value;
+            const status = document.getElementById('editOrgStatus').value;
+            const errorEl = document.getElementById('editOrgError');
+            
+            errorEl.style.display = 'none';
+            const submitBtn = editOrgForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Updating...';
+            submitBtn.disabled = true;
+
+            try {
+                if (newId !== oldId) {
+                    const orgsRes = await window.TatakApi.apiRequest('/organizations');
+                    if ((orgsRes.data || []).some(o => o.organization_id === newId)) {
+                        errorEl.innerText = `Error: ID "${newId}" is already taken.`;
+                        errorEl.style.display = 'block';
+                        submitBtn.innerText = 'Update Organization';
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                }
+                const res = await window.TatakApi.apiRequest(`/organizations/${oldId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ organization_id: newId, name, description: desc, status })
+                });
+                if (res && res.success) {
+                    window.closeModal('editOrgModal');
+                    loadAdminOrganizations();
+                    window.TatakApi.showToast('Organization updated successfully!', 'success');
+                } else {
+                    const errMsg = res.message || 'Error updating organization.';
+                    window.TatakApi.showToast(errMsg, 'error');
+                    errorEl.innerText = errMsg;
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error updating org:', err);
+                window.TatakApi.showToast('System error occurred.', 'error');
+                errorEl.innerText = 'System error occurred.';
+                errorEl.style.display = 'block';
+            } finally { submitBtn.innerText = 'Update Organization'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Delete Organization
+    const confirmDeleteOrgBtn = document.getElementById('confirmDeleteOrgBtn');
+    if (confirmDeleteOrgBtn) {
+        confirmDeleteOrgBtn.onclick = async () => {
+            if (!pendingDeleteOrgId) return;
+            confirmDeleteOrgBtn.innerText = 'Deleting...';
+            confirmDeleteOrgBtn.disabled = true;
+            try {
+                const res = await window.TatakApi.apiRequest(`/organizations/${pendingDeleteOrgId}`, { method: 'DELETE' });
+                if (res && res.success) {
+                    window.closeModal('deleteOrgModal');
+                    loadAdminOrganizations();
+                    window.TatakApi.showToast('Organization deleted successfully.', 'success');
+                }
+            } catch (err) {
+                window.TatakApi.showToast('Failed to delete organization.', 'error');
+            }
+            finally { 
+                confirmDeleteOrgBtn.innerText = 'Yes, Delete'; 
+                confirmDeleteOrgBtn.disabled = false;
+                pendingDeleteOrgId = null; 
+            }
+        };
+    }
+
+    // Add Event
+    const addEventForm = document.getElementById('addEventForm');
+    if (addEventForm) {
+        addEventForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = addEventForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+            try {
+                const res = await window.TatakApi.apiRequest('/events', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        organization_id: document.getElementById('addEventOrg').value,
+                        name: document.getElementById('addEventName').value,
+                        start_date: document.getElementById('addEventDate').value + ' ' + document.getElementById('addEventStartTime').value,
+                        end_date: document.getElementById('addEventDate').value + ' ' + document.getElementById('addEventEndTime').value,
+                        location: document.getElementById('addEventVenue').value
+                    })
+                });
+                if (res && res.success) {
+                    window.closeModal('addEventModal');
+                    loadAdminEventsTable();
+                    addEventForm.reset();
+                    window.TatakApi.showToast('Event created successfully!', 'success');
+                }
+            } catch (err) { 
+                console.error('Error adding event:', err);
+                window.TatakApi.showToast('Error adding event: ' + err.message, 'error');
+            }
+            finally { submitBtn.innerText = 'Save Event'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Edit Event
+    const editEventForm = document.getElementById('editEventForm');
+    if (editEventForm) {
+        editEventForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editEventId').value;
+            const submitBtn = editEventForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Updating...';
+            submitBtn.disabled = true;
+            try {
+                const res = await window.TatakApi.apiRequest(`/events/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        name: document.getElementById('editEventName').value,
+                        start_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventStartTime').value,
+                        end_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventEndTime').value,
+                        location: document.getElementById('editEventVenue').value
+                    })
+                });
+                if (res && res.success) {
+                    window.closeModal('editEventModal');
+                    loadAdminEventsTable();
+                    window.TatakApi.showToast('Event updated successfully!', 'success');
+                }
+            } catch (err) { 
+                console.error('Error updating event:', err);
+                window.TatakApi.showToast('Error updating event: ' + err.message, 'error');
+            }
+            finally { submitBtn.innerText = 'Update Event'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Delete Event
+    const confirmDeleteEventBtn = document.getElementById('confirmDeleteEventBtn');
+    if (confirmDeleteEventBtn) {
+        confirmDeleteEventBtn.onclick = async () => {
+            if (!pendingDeleteEventId) return;
+            confirmDeleteEventBtn.innerText = 'Deleting...';
+            confirmDeleteEventBtn.disabled = true;
+            try {
+                const res = await window.TatakApi.apiRequest(`/events/${pendingDeleteEventId}`, { method: 'DELETE' });
+                if (res && res.success) {
+                    window.closeModal('deleteEventModal');
+                    loadAdminEventsTable();
+                    window.TatakApi.showToast('Event deleted successfully.', 'success');
+                }
+            } catch (err) {
+                window.TatakApi.showToast('Failed to delete event.', 'error');
+            }
+            finally { 
+                confirmDeleteEventBtn.innerText = 'Yes, Delete'; 
+                confirmDeleteEventBtn.disabled = false;
+                pendingDeleteEventId = null; 
+            }
+        };
+    }
+
+    // Add Officer
+    const addOfficerForm = document.getElementById('officerForm');
+    if (addOfficerForm) {
+        addOfficerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Officer form submission started');
+            const submitBtn = addOfficerForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+            
+            const fullName = `${document.getElementById('offFirstName').value} ${document.getElementById('offLastName').value}`;
+            const statusValue = document.getElementById('offStatus').value === 'Active' ? 1 : 0;
+            
+            const usernameVal = document.getElementById('offUsername').value;
+            // Removed isNaN check because usernames can be strings; the backend ID is handled in the two-step flow.
+
+            const emailVal = document.getElementById('offEmail').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailVal)) {
+                alert('Please enter a valid email address.');
+                submitBtn.innerText = 'Save Officer';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const officerData = {
+                stud_id_number: document.getElementById('offUsername').value,
+                username: document.getElementById('offUsername').value,
+                email: emailVal,
+                password: document.getElementById('offPassword').value,
+                fname: fullName,
+                role: 'Officer',
+                organization_id: parseInt(document.getElementById('offOrg').value),
+                position: document.getElementById('offPosition').value,
+                term_start: document.getElementById('offStart').value,
+                term_end: document.getElementById('offEnd').value,
+                status: document.getElementById('offStatus').value
+            };
+            
+            console.log('Sending officer registration data:', officerData);
+            
+            try {
+                let newUserId = null;
+                // Step 1: Register/Create the User account
+                try {
+                    const userRes = await window.TatakApi.apiRequest('/auth/register', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            stud_id_number: officerData.stud_id_number,
+                            username: officerData.username,
+                            email: officerData.email,
+                            password: officerData.password,
+                            fname: officerData.fname,
+                            role: officerData.role
+                        })
+                    });
+                    newUserId = userRes.id || (userRes.data && userRes.data.id);
+                } catch (regErr) {
+                    console.warn('Registration failed, checking if user already exists...', regErr.message);
+                    // If duplicate, try to find the existing user to get their ID
+                    if (regErr.message.includes('Duplicate entry') || regErr.message.includes('already exists')) {
+                        const usersRes = await window.TatakApi.apiRequest('/auth/users');
+                        const existingUser = (usersRes.data || usersRes).find(u => u.username === officerData.username);
+                        if (existingUser) {
+                            newUserId = existingUser.id;
+                            console.log('Found existing user with ID:', newUserId);
+                        } else {
+                            throw new Error('User exists but could not be found in directory.');
+                        }
+                    } else {
+                        throw regErr;
+                    }
+                }
+                
+                if (!newUserId) {
+                    throw new Error('Failed to obtain a valid User ID.');
+                }
+
+                // Step 2: Link the user as an officer
+                // We send IDs as numbers but also ensure they are properly parsed.
+                const payload = {
+                    user_id: Number(newUserId),
+                    organization_id: Number(officerData.organization_id),
+                    position: officerData.position,
+                    term_start: officerData.term_start,
+                    term_end: officerData.term_end,
+                    status: officerData.status
+                };
+                
+                console.log('Step 2: Linking with payload:', payload);
+                
+                const officerLinkRes = await window.TatakApi.apiRequest('/officers', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('Step 2 Response:', officerLinkRes);
+
+                if (officerLinkRes && (officerLinkRes.success || officerLinkRes.id)) {
+                    window.closeModal('addOfficerModal');
+                    loadAdminOfficersTable();
+                    addOfficerForm.reset();
+                    window.TatakApi.showToast('Officer created and linked successfully!', 'success');
+                } else {
+                    const errMsg = officerLinkRes?.message || officerLinkRes?.error || 'Unknown error';
+                    window.TatakApi.showToast('User created, but linking failed: ' + errMsg, 'error');
+                }
+            } catch (err) { 
+                console.error('Error in officer creation flow:', err);
+                window.TatakApi.showToast('Error: ' + err.message, 'error');
+            }
+            finally { 
+                submitBtn.innerText = 'Save Officer'; 
+                submitBtn.disabled = false; 
+            }
+        });
+    }
+
+    // Edit Officer
+    const editOfficerForm = document.getElementById('editOfficerForm');
+    if (editOfficerForm) {
+        editOfficerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editOfficerId').value;
+            const submitBtn = editOfficerForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Updating...';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await window.TatakApi.apiRequest(`/officers/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        fname: document.getElementById('editOffName').value,
+                        organization_id: parseInt(document.getElementById('editOffOrg').value),
+                        position: document.getElementById('editOffRole').value,
+                        status: document.getElementById('editOffStatus').value
+                    })
+                });
+                if (res && res.success) {
+                    window.closeModal('editOfficerModal');
+                    loadAdminOfficersTable();
+                    window.TatakApi.showToast('Officer updated successfully!', 'success');
+                }
+            } catch (err) { 
+                console.error('Error updating officer:', err);
+                window.TatakApi.showToast('Error updating officer: ' + err.message, 'error');
+            }
+            finally { submitBtn.innerText = 'Update Officer'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Delete Officer
+    const confirmDeleteOfficerBtn = document.getElementById('confirmDeleteOfficerBtn');
+    if (confirmDeleteOfficerBtn) {
+        confirmDeleteOfficerBtn.onclick = async () => {
+            if (!pendingDeleteOfficerId) return;
+            confirmDeleteOfficerBtn.innerText = 'Removing...';
+            confirmDeleteOfficerBtn.disabled = true;
+            try {
+                // Step 1: Remove from officers table
+                await window.TatakApi.apiRequest(`/officers/${pendingDeleteOfficerId}`, { method: 'DELETE' });
+                
+                // Step 2: Remove from users table to completely delete Joe Smith
+                try {
+                    await window.TatakApi.apiRequest(`/auth/users/${pendingDeleteOfficerId}`, { method: 'DELETE' });
+                } catch (userErr) {
+                    console.warn('Officer record removed, but user account might have other dependencies:', userErr.message);
+                }
+
+                window.closeModal('deleteOfficerModal');
+                loadAdminOfficersTable();
+                window.TatakApi.showToast('Officer and user account removed successfully.', 'success');
+            } catch (err) {
+                console.error('Error removing officer:', err);
+                window.TatakApi.showToast('Failed to remove officer: ' + err.message, 'error');
+            }
+            finally { 
+                confirmDeleteOfficerBtn.innerText = 'Yes, Remove'; 
+                confirmDeleteOfficerBtn.disabled = false;
+                pendingDeleteOfficerId = null; 
+            }
+        };
+    }
+
+    // Attendance Override
+    const overrideAttendanceForm = document.getElementById('overrideAttendanceForm');
+    if (overrideAttendanceForm) {
+        overrideAttendanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studentId = document.getElementById('overrideStudentId').value;
+            const eventId = document.getElementById('overrideEventId').value;
+            const status = overrideAttendanceForm.querySelector('input[name="attendanceStatus"]:checked').value;
+            const remarks = document.getElementById('overrideRemarks').value;
+            
+            const submitBtn = overrideAttendanceForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Updating...';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await window.TatakApi.apiRequest('/attendance/override', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: studentId, event_id: eventId, status: status, remarks: remarks })
+                });
+                if (res && res.success) {
+                    window.closeModal('overrideAttendanceModal');
+                    loadAdminStudentsTable();
+                    window.TatakApi.showToast('Attendance overridden successfully.', 'success');
+                }
+            } catch (err) { 
+                console.error('Error overriding attendance:', err);
+                window.TatakApi.showToast('Error overriding attendance: ' + err.message, 'error');
+            }
+            finally { submitBtn.innerText = 'Update Attendance'; submitBtn.disabled = false; }
+        });
+    }
+
+    // Global Helpers for Avatar & Password
+    window.handleAvatarPreview = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            const placeholderDiv = event.target.closest('.avatar-upload-placeholder');
+            const img = placeholderDiv.querySelector('img');
+            const icon = placeholderDiv.querySelector('i');
+            reader.onload = function(e) {
+                img.src = e.target.result;
+                img.style.display = 'block';
+                if (icon) icon.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    };
+
+    window.togglePasswordVisibility = function(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    };
+
+    // Initial Load
+    showSection('overview', document.querySelector('.nav-item.active'));
+});

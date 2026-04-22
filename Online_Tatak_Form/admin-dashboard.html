@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | UC Online Tatak Forms</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="UC-SAS-Logo" class="side-logo">
+                <div class="side-title">
+                    <strong>ADMIN DASHBOARD</strong>
+                    <span>ACCESS SYSTEM</span>
+                </div>
+            </div>
+
+            <nav class="side-nav">
+                <p class="nav-label">MAIN MENU</p>
+                <a href="#" class="nav-item active" onclick="showSection('overview', this)">
+                    <i class="fas fa-th-large"></i> Overview
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('events', this)">
+                    <i class="fas fa-calendar-alt"></i> Events
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('organization', this)">
+                    <i class="fas fa-university"></i> Organization
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('officers', this)">
+                    <i class="fas fa-user-shield"></i> Officers
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('students', this)">
+                    <i class="fas fa-user-graduate"></i> Students
+                </a>
+                <a href="#" class="nav-item" onclick="showSection('reports', this)">
+                    <i class="fas fa-chart-bar"></i> Reports
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="logout-link" onclick="openModal('logoutModal')">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <div class="header-welcome">
+                    <h1 id="main-title">HELLO, <span class="highlight">ADMIN</span></h1>
+                    <p id="sub-title">Friday, February 27, 2026 — 2nd Semester A.Y 2025-2026</p>
+                </div>
+                <div class="header-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Search anything....">
+                    </div>
+                    <button class="icon-btn"><i class="far fa-bell"></i></button>
+                    <button class="btn-primary header-action-btn" id="action-btn">+ New Event</button>
+                </div>
+            </header>
+
+            <div id="dynamic-content">
+                <!-- Dynamic content loaded here via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="modal-overlay" style="display: none;">
+        <div class="confirm-modal-content">
+            <div class="logout-icon-container">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h2>Signout?</h2>
+            <p>You are sure you want to sign out of your <br><strong>UC Admin Account?</strong>.</p>
+            <div class="confirm-modal-buttons">
+                <button id="stayLoggedIn" class="btn-cancel-modal" onclick="closeModal('logoutModal')">Cancel</button>
+                <button id="confirmLogout" class="btn-confirm-logout">Sign out</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addOfficerModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark" style="display: flex; align-items: center; gap: 20px;">
+                <div class="avatar-upload-placeholder" style="margin: 0; flex-shrink: 0; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%;" onclick="this.querySelector('input[type=file]').click()">
+                    <i class="fas fa-camera" style="color: #94a3b8; font-size: 20px; z-index: 1;"></i>
+                    <input type="file" accept="image/*" style="display: none;" onchange="handleAvatarPreview(event)">
+                    <img src="" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2;">
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0;">Add New Officer</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: #94a3b8;">Fill in the officer details below.</p>
+                </div>
+                <button type="button" onclick="closeModal('addOfficerModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="officerForm" class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>FIRST NAME</label>
+                        <input type="text" id="offFirstName" placeholder="Enter first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>LAST NAME</label>
+                        <input type="text" id="offLastName" placeholder="Enter last name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>POSITION</label>
+                    <input type="text" id="offPosition" placeholder="e.g. President" required>
+                </div>
+                <div class="form-group">
+                    <label>ORGANIZATION</label>
+                    <select id="offOrg" required>
+                        <option value="" disabled selected>Select organization...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>EMAIL ADDRESS</label>
+                    <input type="email" id="offEmail" placeholder="Enter email address" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>TERM START</label>
+                        <input type="date" id="offStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label>TERM END</label>
+                        <input type="date" id="offEnd" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>USERNAME</label>
+                        <input type="text" id="offUsername" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>PASSWORD</label>
+                        <div class="password-wrapper" style="position: relative;">
+                            <input type="password" id="offPassword" placeholder="Enter password" required>
+                            <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('offPassword', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>STATUS</label>
+                    <select id="offStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Save Officer</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('addOfficerModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editOfficerModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Edit Officer Details</h3>
+                <p>Update officer information and permissions.</p>
+                <button type="button" onclick="closeModal('editOfficerModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editOfficerForm" class="modal-body">
+                <input type="hidden" id="editOfficerId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>FULL NAME</label>
+                        <input type="text" id="editOffName" placeholder="Full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ORGANIZATION</label>
+                        <select id="editOffOrg" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ROLE / POSITION</label>
+                        <input type="text" id="editOffRole" placeholder="e.g. President" required>
+                    </div>
+                    <div class="form-group">
+                        <label>STATUS</label>
+                        <select id="editOffStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Update Officer</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('editOfficerModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteOfficerModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-centered">
+            <div class="modal-body">
+                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="fas fa-user-minus"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Remove Officer</h2>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This will revoke all administrative access for this officer.</p>
+                <div class="modal-footer-centered">
+                    <button id="confirmDeleteOfficerBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Remove</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteOfficerModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Organization Modals -->
+    <div id="addOrgModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Add New Organization</h3>
+                <p>Register a new student organization in the system.</p>
+                <button type="button" onclick="closeModal('addOrgModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addOrgForm" class="modal-body">
+                <div class="form-group">
+                    <label>ORGANIZATION ID</label>
+                    <input type="text" id="addOrgId" placeholder="e.g. 202601" required>
+                </div>
+                <div class="form-group">
+                    <label>ORGANIZATION NAME</label>
+                    <input type="text" id="addOrgName" placeholder="e.g. Supreme Student Government" required>
+                </div>
+                <div class="form-group">
+                    <label>DESCRIPTION</label>
+                    <textarea id="addOrgDesc" placeholder="Briefly describe the organization..." rows="3" style="resize: none;"></textarea>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Save Organization</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('addOrgModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editOrgModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Edit Organization</h3>
+                <p>Update organization details and system status.</p>
+                <button type="button" onclick="closeModal('editOrgModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editOrgForm" class="modal-body">
+                <input type="hidden" id="editOrgOldId">
+                <div id="editOrgError" style="display: none; background: #fef2f2; color: #ef4444; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 20px; border: 1px solid #fca5a5;"></div>
+                
+                <div class="form-group">
+                    <label>ORGANIZATION ID</label>
+                    <input type="text" id="editOrgId" placeholder="Organization ID" required>
+                </div>
+                <div class="form-group">
+                    <label>ORGANIZATION NAME</label>
+                    <input type="text" id="editOrgName" placeholder="Organization name" required>
+                </div>
+                <div class="form-group">
+                    <label>DESCRIPTION</label>
+                    <textarea id="editOrgDesc" placeholder="Organization description" rows="3" style="resize: none;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>STATUS</label>
+                    <select id="editOrgStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Update Organization</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('editOrgModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteOrgModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-centered">
+            <div class="modal-body">
+                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Organization</h2>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This action is permanent and will remove all associated data.</p>
+                <div class="modal-footer-centered">
+                    <button id="confirmDeleteOrgBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteOrgModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modals -->
+    <div id="addEventModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Create New Event</h3>
+                <p>Only admin-approved events can be opened for attendance.</p>
+                <button type="button" onclick="closeModal('addEventModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addEventForm" class="modal-body">
+                <div class="form-group">
+                    <label>ORGANIZATION</label>
+                    <select id="addEventOrg" required>
+                        <option value="" disabled selected>Select an organization...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>EVENT NAME</label>
+                    <input type="text" id="addEventName" placeholder="e.g. Leadership Summit" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>DATE</label>
+                        <input type="date" id="addEventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>VENUE</label>
+                        <input type="text" id="addEventVenue" placeholder="e.g. University of Cebu - Main Campus" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>START TIME</label>
+                        <input type="time" id="addEventStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>END TIME</label>
+                        <input type="time" id="addEventEndTime" required>
+                    </div>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Save Event</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('addEventModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editEventModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Edit Event Details</h3>
+                <p>Update the event information below.</p>
+                <button type="button" onclick="closeModal('editEventModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editEventForm" class="modal-body">
+                <input type="hidden" id="editEventId">
+                <div class="form-group">
+                    <label>EVENT NAME</label>
+                    <input type="text" id="editEventName" placeholder="e.g. Leadership Summit" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>DATE</label>
+                        <input type="date" id="editEventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>VENUE</label>
+                        <input type="text" id="editEventVenue" placeholder="e.g. University of Cebu - Main Campus" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>START TIME</label>
+                        <input type="time" id="editEventStartTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>END TIME</label>
+                        <input type="time" id="editEventEndTime" required>
+                    </div>
+                </div>
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Update Event</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('editEventModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteEventModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-centered">
+            <div class="modal-body">
+                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Event</h2>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This action cannot be undone and will remove all attendance records.</p>
+                <div class="modal-footer-centered">
+                    <button id="confirmDeleteEventBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteEventModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Modals -->
+    <div id="overrideAttendanceModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header-dark">
+                <h3>Override Attendance</h3>
+                <p id="overrideStudentName">Set attendance status for the selected student.</p>
+                <button type="button" onclick="closeModal('overrideAttendanceModal')" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="overrideAttendanceForm" class="modal-body">
+                <input type="hidden" id="overrideStudentId">
+                
+                <div class="form-group">
+                    <label>SELECT EVENT</label>
+                    <select id="overrideEventId" required>
+                        <option value="" disabled selected>Select an event...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>ATTENDANCE STATUS</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        <label class="status-option">
+                            <input type="radio" name="attendanceStatus" value="Present" checked style="display: none;">
+                            <div class="status-box present">Present</div>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="attendanceStatus" value="Late" style="display: none;">
+                            <div class="status-box late">Late</div>
+                        </label>
+                        <label class="status-option">
+                            <input type="radio" name="attendanceStatus" value="Absent" style="display: none;">
+                            <div class="status-box absent">Absent</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>REASON / REMARKS (OPTIONAL)</label>
+                    <textarea id="overrideRemarks" placeholder="e.g. Medical emergency, valid excuse..." rows="2" style="resize: none;"></textarea>
+                </div>
+
+                <div class="modal-footer-grid">
+                    <button type="submit" class="btn-save-modal">Update Attendance</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('overrideAttendanceModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteStudentModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-content-centered">
+            <div class="modal-body">
+                <div class="logout-icon-container" style="margin: 0 auto 24px; width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Delete Student</h2>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 32px;">Are you sure? This will remove the student and all their attendance records from the system.</p>
+                <div class="modal-footer-centered">
+                    <button id="confirmDeleteStudentBtn" class="btn-save-modal" style="background: #ef4444 !important;">Yes, Delete</button>
+                    <button type="button" class="btn-cancel-ghost" onclick="closeModal('deleteStudentModal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-client.js?v=2"></script>
+    <script src="admin.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,671 @@
+/* --- Global Styles --- */
+:root {
+    --sidebar-bg: #121c43; 
+    --main-bg: #f4f7fe;
+    --primary-blue: #1d2b63;
+    --accent-blue: #4096ff;
+    --text-dark: #1b2559;
+    --text-gray: #7a829a;
+    --white: #ffffff;
+    --success: #00b5ad; 
+    --border-color: #e0e5f2;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--main-bg);
+    color: var(--text-dark);
+}
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--main-bg);
+    color: var(--text-dark);
+}
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.sidebar-header {
+    padding: 0 25px 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo { width: 40px; height: 40px; }
+
+.logo-text strong { display: block; font-size: 14px; letter-spacing: 0.5px; }
+.logo-text span { font-size: 11px; opacity: 0.7; }
+
+.nav-label {
+    padding: 0 25px 15px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+}
+
+.navigation ul { list-style: none; }
+
+.nav-item {
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 15px;
+    opacity: 0.7;
+}
+
+.nav-item i { width: 20px; text-align: center; }
+
+.nav-item:hover, .nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    border-left: 4px solid #fff;
+}
+
+.nav-logout {
+    margin-top: auto;
+    padding: 25px;
+    cursor: pointer;
+    opacity: 0.7;
+    position: relative;
+    z-index: 10;       
+    display: flex;      
+    align-items: center;
+    gap: 15px;
+}
+.nav-logout:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+.main-content {
+    flex: 1;
+    padding: 30px 40px;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.welcome-text h1 { font-size: 32px; font-weight: 700; color: var(--text-dark); }
+.welcome-text p { color: #707eae; font-size: 14px; margin-top: 4px; }
+
+.top-icons { display: flex; align-items: center; gap: 12px; }
+.icon-circle {
+    width: 40px; height: 40px;
+    background: var(--white);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #707eae;
+    cursor: pointer;
+}
+
+.profile-avatar { width: 40px; height: 40px; border-radius: 50%; }
+
+/* --- Action Banner --- */
+.action-banner {
+    background: var(--white);
+    border: 2px solid #3b82f6;
+    color: #3b82f6;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+/* --- Grid & Cards --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 25px;
+}
+
+.card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 25px;
+}
+
+/* --- QR Card Specifics --- */
+.qr-header { display: flex; gap: 20px; margin-bottom: 30px; }
+.qr-icon-large {
+    font-size: 40px;
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.qr-title h3 { font-size: 18px; margin-bottom: 8px; }
+.qr-title p { font-size: 13px; color: var(--text-gray); line-height: 1.5; }
+
+.step-list { list-style: none; margin-bottom: 30px; }
+.step-list li {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.step-list span {
+    width: 28px;
+    height: 28px;
+    background: var(--sidebar-bg);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.btn-scan {
+    width: 100%;
+    background: var(--sidebar-bg);
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* --- Event Cards --- */
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.badge.open { background: #dcfce7; color: var(--success); font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 700; }
+
+.event-time { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
+
+.progress-container {
+    height: 8px;
+    background: #edf2f7;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.progress-bar { height: 100%; background: var(--sidebar-bg); border-radius: 10px; }
+
+.card-footer { display: flex; justify-content: space-between; align-items: center; }
+.expiry-text { font-size: 12px; color: var(--text-gray); font-style: italic; }
+
+.btn-confirm {
+    background: var(--sidebar-bg);
+    color: white;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* --- Stats Card --- */
+.stats-content { display: flex; align-items: center; gap: 30px; margin-top: 20px; }
+
+.circular-progress {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 8px solid var(--sidebar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #3b82f6;
+}
+
+.stat-boxes { display: flex; gap: 10px; flex: 1; }
+.stat-box {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-box.attended { background: #eff6ff; color: #3b82f6; }
+.stat-box.missed { background: #fef2f2; color: var(--danger); }
+
+.stat-box strong { font-size: 18px; }
+.stat-box span { font-size: 11px; font-weight: 600; }
+
+/* --- Logout Modal Styling --- */
+.confirm-modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.logout-icon-container {
+    width: 60px;
+    height: 60px;
+    background: #fff5f5;
+    color: #e53e3e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 24px;
+    border: 1px solid #fed7d7;
+}
+
+.confirm-modal-content h2 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.confirm-modal-content p {
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.confirm-modal-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-cancel-modal {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f7fafc;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-confirm-logout {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #ef4444; /* Red color from design */
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* --- Logout Modal Overlay --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* Semi-transparent background */
+    backdrop-filter: blur(4px);    /* Blurs the dashboard behind the modal */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;                /* Ensures it sits on top of everything */
+}
+
+/* --- Modal Card --- */
+.confirm-modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 28px;           /* Extra rounded corners as seen in design */
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Icon Styling --- */
+.logout-icon-container {
+    width: 70px;
+    height: 70px;
+    background: #fff5f5;
+    color: #ef4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 28px;
+    border: 1px solid #fee2e2;
+}
+
+/* --- Text Styling --- */
+.confirm-modal-content h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a202c;
+    margin-bottom: 12px;
+}
+
+.confirm-modal-content p {
+    color: #718096;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+/* --- Button Layout --- */
+.confirm-modal-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel-modal, .btn-confirm-logout {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* Cancel Button (Gray) */
+.btn-cancel-modal {
+    border: 1px solid #e2e8f0;
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.btn-cancel-modal:hover {
+    background: #e2e8f0;
+}
+
+/* Sign Out Button (Red) */
+.btn-confirm-logout {
+    border: none;
+    background: #ef4444; 
+    color: white;
+}
+
+.btn-confirm-logout:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+/* Layout for the Active Events page cards */
+.active-events-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    gap: 20px;
+}
+
+/* Specific styling for the red hint under the badge */
+.badge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.closes-hint {
+    color: #ff4d4f;
+    font-size: 10px;
+    margin-top: 4px;
+}
+
+/* Optional: Smooth transition when switching */
+.dashboard-section {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+/* Sidebar update: Ensure the Upcoming nav item is clickable */
+#nav-upcoming { cursor: pointer; }
+
+/* 3-Column Grid for Upcoming Events */
+.upcoming-events-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Exactly 3 columns as per image */
+    gap: 20px;
+}
+
+/* Badge for Upcoming (Blue/Purple tint) */
+.badge.upcoming {
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+/* Specifics for Upcoming Cards */
+.event-date {
+    font-size: 13px;
+    color: #a3aed0;
+    margin: 10px 0 20px 0;
+}
+
+.divider {
+    height: 1px;
+    background-color: #f0f2f8;
+    margin-bottom: 15px;
+}
+
+.upcoming-footer {
+    justify-content: flex-end; /* Align text to the right as per image */
+}
+
+.open-time, .duration-text {
+    font-size: 12px;
+    color: #a3aed0;
+}
+/* History Section Specifics */
+.history-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.status-pills {
+    display: flex;
+    gap: 12px;
+}
+
+.pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.attended-pill { background: #e6f7f0; color: #00b365; }
+.absent-pill { background: #fff1f0; color: #ff4d4f; }
+.rate-pill { background: #e6f0ff; color: #1890ff; border: 1px solid #91d5ff; }
+
+.view-all {
+    text-decoration: none;
+    color: #1a237e;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* List Layout */
+.history-header {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 0.5fr;
+    padding: 15px 20px;
+    color: #a3aed0;
+    font-size: 12px;
+    font-weight: 700;
+    border-bottom: 1px solid #f0f2f8;
+}
+
+.history-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 0.5fr;
+    padding: 15px 20px;
+    align-items: center;
+    border-bottom: 1px solid #f0f2f8;
+}
+
+.event-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.status-icon.success { background: #e6f7f0; color: #00b365; }
+.status-icon.danger { background: #fff1f0; color: #ff4d4f; }
+
+.event-name { font-weight: 700; color: #1b2559; }
+.event-dt { color: #1b2559; font-size: 14px; }
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.status-badge.attended { border-color: #00b365; color: #00b365; }
+.status-badge.absent { border-color: #ff4d4f; color: #ff4d4f; }
+.report-instruction {
+    color: #4a5568;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.stats-summary-card {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 20px 40px;
+    margin-bottom: 25px;
+}
+
+.cert-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.cert-icon-box {
+    background: #fff5f5;
+    color: #e53e3e;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.cert-icon-box span { font-size: 10px; }
+
+.cert-details { flex-grow: 1; }
+.cert-details h3 { font-size: 16px; margin-bottom: 4px; }
+.cert-details p { font-size: 13px; color: #718096; }
+
+.cert-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+
+.badge-mini {
+    background: #e6f7f0;
+    color: #00b365;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.cert-id { font-size: 12px; color: #a0aec0; }
+
+.btn-download {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.modal {
+    display: none; /* JS will change this to flex */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); /* Semi-transparent background */
+    justify-content: center;
+    align-items: center;
+}
