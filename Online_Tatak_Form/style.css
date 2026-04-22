@@ -3226,12 +3226,13 @@ h2.title-built span {
 
 .data-table th {
     text-align: left;
-    padding: 15px;
+    padding: 16px 15px;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #64748b;
     border-bottom: 1px solid #f1f5f9;
+    font-weight: 700;
 }
 
 .data-table td {
@@ -3524,7 +3525,7 @@ h2.title-built span {
 }
 
 .status-indicator-dot {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
@@ -3978,7 +3979,15 @@ h2.title-built span {
 .btn-action-mini.delete { background: #fff1f2; color: #f43f5e; }
 .btn-action-mini.delete:hover { background: #f43f5e; color: white; }
 
-.status-badge { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-badge { 
+    display: inline-block;
+    font-size: 10px; 
+    font-weight: 800; 
+    padding: 4px 10px; 
+    border-radius: 6px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
 .status-badge.Active { background: #f0fdf4; color: #22c55e; border: 1px solid #dcfce7; }
 .status-badge.Inactive { background: #fff1f2; color: #ef4444; border: 1px solid #fee2e2; }
 
@@ -4119,7 +4128,7 @@ h2.title-built span {
 }
 
 .data-table td {
-    text-align: center !important;
+    text-align: left !important;
 }
 
 /* Ensure flex containers inside cells are centered as a group */
@@ -4131,8 +4140,9 @@ h2.title-built span {
     text-align: left;
 }
 
-/* Center columns that are purely text or badges */
-.data-table td:not(:first-child) {
+/* Center columns that are purely status or actions */
+.data-table th.text-center,
+.data-table td.text-center {
     text-align: center !important;
 }
 
@@ -4173,13 +4183,14 @@ h2.title-built span {
 .badge-org {
     background: #f5f3ff !important;
     color: #7c3aed !important;
-    padding: 8px 16px !important;
-    border-radius: 10px !important;
+    padding: 4px 12px !important;
+    border-radius: 8px !important;
     font-weight: 800 !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     display: inline-block !important;
     line-height: 1.4 !important;
     max-width: 250px !important;
+    border: 1px solid rgba(124, 58, 237, 0.1) !important;
 }
 
 /* --- Toast Notifications --- */

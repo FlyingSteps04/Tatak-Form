@@ -315,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="text-align: center;">EVENT</th>
-                                        <th style="text-align: center;">ORG</th>
-                                        <th style="text-align: center;">DATE</th>
-                                        <th style="text-align: center;">VENUE</th>
-                                        <th style="text-align: center;">STATUS</th>
-                                        <th style="text-align: center;">ACTION</th>
+                                        <th>EVENT</th>
+                                        <th>ORG</th>
+                                        <th>DATE</th>
+                                        <th>VENUE</th>
+                                        <th class="text-center">STATUS</th>
+                                        <th class="text-center">ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody id="admin-events-table-body">
@@ -442,8 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>POSITION</th>
                                     <th>ORGANIZATION</th>
                                     <th>TERM</th>
-                                    <th>STATUS</th>
-                                    <th style="text-align: center;">ACTION</th>
+                                    <th class="text-center">STATUS</th>
+                                    <th class="text-center">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-officers-table-body">
@@ -500,8 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>STUDENT</th>
                                     <th>COURSE & YEAR</th>
                                     <th>ORGANIZATION</th>
-                                    <th>ATTENDANCE</th>
-                                    <th style="text-align: center;">ACTION</th>
+                                    <th class="text-center">ATTENDANCE</th>
+                                    <th class="text-center">ACTION</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-students-table-body">
@@ -624,14 +624,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td><span class="badge-org">${orgName}</span></td>
                             <td>${start.toLocaleDateString()}</td>
                             <td>${event.location || 'TBA'}</td>
-                            <td><span class="status ${statusCls}">${status}</span></td>
-                            <td>
+                            <td class="text-center"><span class="status ${statusCls}">${status}</span></td>
+                            <td class="text-center">
                                 <div class="action-icons" style="justify-content: center;">
                                     <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${event.start_date.split('T')[0]}', '${(event.location || '').replace(/'/g, "\\'")}', '${new Date(event.start_date).toTimeString().slice(0,5)}', '${event.end_date ? new Date(event.end_date).toTimeString().slice(0,5) : ''}')" title="Edit Event"><i class="far fa-edit"></i></button>
                                     <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>
+`;
                 }).join('');
             }
 
@@ -786,8 +787,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td><span class="badge-pill-yellow">${position}</span></td>
                             <td><span class="badge-org-blue">${orgName}</span></td>
                             <td style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
-                            <td><span class="status-indicator-dot">● Active</span></td>
-                            <td style="text-align: center;">
+                            <td class="text-center"><span class="status-indicator-dot">● Active</span></td>
+                            <td class="text-center">
                                 <div class="action-icons" style="justify-content: center;">
                                     <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openEditOfficerModal('${off.officer_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}')" title="Edit Officer"><i class="far fa-edit"></i></button>
                                     <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteOfficerModal('${off.officer_id}', '${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt"></i></button>
@@ -846,15 +847,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             </td>
                             <td><span class="badge-pill-blue">${course}</span></td>
                             <td><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${org}</span></td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 12px; width: 160px;">
+                            <td class="text-center">
+                                <div style="display: flex; align-items: center; gap: 12px; width: 160px; margin: 0 auto;">
                                     <div class="progress-container" style="flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; border: 1px solid #f1f5f9;">
                                         <div class="progress-bar bar-${barColor}" style="width: ${attendance}%; height: 100%; border-radius: 10px;"></div>
                                     </div>
                                     <span style="font-size: 0.8rem; font-weight: 800; color: ${barColor === 'green' ? '#10b981' : barColor === 'yellow' ? '#f59e0b' : '#ef4444'};">${attendance}%</span>
                                 </div>
                             </td>
-                            <td style="text-align: center;">
+                            <td class="text-center">
                                 <div class="action-icons" style="justify-content: center;">
                                     <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openOverrideAttendanceModal('${student.user_id}', '${student.fname}')" title="Override Attendance"><i class="far fa-edit"></i></button>
                                     <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteStudentModal('${student.user_id}')" title="Delete Student"><i class="far fa-trash-alt"></i></button>
