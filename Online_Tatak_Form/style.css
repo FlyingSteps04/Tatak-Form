@@ -3121,10 +3121,10 @@ h2.title-built span {
     position: relative;
     background: white;
     border-radius: 12px;
-    padding: 0 15px;
+    padding: 0 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     border: 1px solid #e2e8f0;
 }
 
@@ -3949,7 +3949,7 @@ h2.title-built span {
     font-size: 1.05rem; 
     font-weight: 700; 
     line-height: 1.3;
-    min-height: 2.6em; /* Ensures symmetry for 1 or 2 line names */
+    min-height: 2.6em;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -3961,7 +3961,7 @@ h2.title-built span {
     color: #64748b; 
     font-size: 0.85rem; 
     line-height: 1.5; 
-    min-height: 3em; /* Ensures symmetry for descriptions */
+    min-height: 3em; 
     display: -webkit-box; 
     -webkit-line-clamp: 2; 
     -webkit-box-orient: vertical; 
@@ -4121,7 +4121,7 @@ h2.title-built span {
 
 .data-table th, 
 .data-table td {
-    padding: 16px 12px !important;
+    padding: 18px 20px !important;
     vertical-align: middle !important;
     white-space: normal !important;
     word-break: break-word !important;
@@ -4140,10 +4140,15 @@ h2.title-built span {
     text-align: left;
 }
 
-/* Center columns that are purely status or actions */
+/* Center columns that are purely status, actions, or secondary info */
 .data-table th.text-center,
 .data-table td.text-center {
     text-align: center !important;
+}
+
+/* Ensure flex containers inside centered cells also center their children */
+.data-table td.text-center > div {
+    justify-content: center !important;
 }
 
 /* Confirmation Modals Centering */

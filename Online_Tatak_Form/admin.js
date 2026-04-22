@@ -316,9 +316,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <thead>
                                     <tr>
                                         <th>EVENT</th>
-                                        <th>ORG</th>
-                                        <th>DATE</th>
-                                        <th>VENUE</th>
+                                        <th class="text-center">ORG</th>
+                                        <th class="text-center">DATE</th>
+                                        <th class="text-center">VENUE</th>
                                         <th class="text-center">STATUS</th>
                                         <th class="text-center">ACTION</th>
                                     </tr>
@@ -439,9 +439,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <thead>
                                 <tr>
                                     <th>OFFICER</th>
-                                    <th>POSITION</th>
-                                    <th>ORGANIZATION</th>
-                                    <th>TERM</th>
+                                    <th class="text-center">POSITION</th>
+                                    <th class="text-center">ORGANIZATION</th>
+                                    <th class="text-center">TERM</th>
                                     <th class="text-center">STATUS</th>
                                     <th class="text-center">ACTION</th>
                                 </tr>
@@ -498,8 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <thead>
                                 <tr>
                                     <th>STUDENT</th>
-                                    <th>COURSE & YEAR</th>
-                                    <th>ORGANIZATION</th>
+                                    <th class="text-center">COURSE & YEAR</th>
+                                    <th class="text-center">ORGANIZATION</th>
                                     <th class="text-center">ATTENDANCE</th>
                                     <th class="text-center">ACTION</th>
                                 </tr>
@@ -616,14 +616,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (now >= start && now <= end) { status = 'Ongoing'; statusCls = 'ongoing'; }
                     else if (now > end) { status = 'Done'; statusCls = 'done'; }
 
-                    const orgName = event.organization_name || organizations.find(o => o.organization_id === event.organization_id)?.name || 'N/A';
+                    const orgName = event.organization_name || organizations.find(o => String(o.organization_id) === String(event.organization_id))?.name || 'N/A';
 
                     return `
                         <tr>
                             <td style="font-weight: 700; color: #1e293b;">${event.name}</td>
-                            <td><span class="badge-org">${orgName}</span></td>
-                            <td>${start.toLocaleDateString()}</td>
-                            <td>${event.location || 'TBA'}</td>
+                            <td class="text-center"><span class="badge-org">${orgName}</span></td>
+                            <td class="text-center">${start.toLocaleDateString()}</td>
+                            <td class="text-center">${event.location || 'TBA'}</td>
                             <td class="text-center"><span class="status ${statusCls}">${status}</span></td>
                             <td class="text-center">
                                 <div class="action-icons" style="justify-content: center;">
@@ -684,8 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = orgs.map((org, i) => {
                     const short = org.name.substring(0,3).toUpperCase();
                     const color = colors[i % colors.length];
-                    const orgStudents = students.filter(s => s.organization_id === org.organization_id);
-                    const orgEvents = events.filter(e => e.organization_id === org.organization_id);
+                    const orgEvents = events.filter(e => String(e.organization_id) === String(org.organization_id));
+                    const orgStudents = students.filter(s => String(s.organization_id) === String(org.organization_id));
 
                     return `
                         <div class="org-mini-card">
@@ -721,18 +721,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Set Top Performer (using the one with most events as primary, students as secondary)
                 const topOrg = [...orgs].sort((a,b) => {
-                    const aEvents = events.filter(e => e.organization_id === a.organization_id).length;
-                    const bEvents = events.filter(e => e.organization_id === b.organization_id).length;
+                    const aEvents = events.filter(e => String(e.organization_id) === String(a.organization_id)).length;
+                    const bEvents = events.filter(e => String(e.organization_id) === String(b.organization_id)).length;
                     if (bEvents !== aEvents) return bEvents - aEvents;
                     
-                    const aStudents = students.filter(s => s.organization_id === a.organization_id).length;
-                    const bStudents = students.filter(s => s.organization_id === b.organization_id).length;
+                    const aStudents = students.filter(s => String(s.organization_id) === String(a.organization_id)).length;
+                    const bStudents = students.filter(s => String(s.organization_id) === String(b.organization_id)).length;
                     return bStudents - aStudents;
                 })[0];
 
                 if (topOrg) {
-                    const topCount = students.filter(s => s.organization_id === topOrg.organization_id).length;
-                    const topEv = events.filter(e => e.organization_id === topOrg.organization_id).length;
+                    const topCount = students.filter(s => String(s.organization_id) === String(topOrg.organization_id)).length;
+                    const topEv = events.filter(e => String(e.organization_id) === String(topOrg.organization_id)).length;
                     if(document.getElementById('top-org-name')) {
                         // Use first 3 letters for the big logo, but handle short names
                         const logoText = topOrg.name.includes(' ') 
@@ -784,9 +784,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge-pill-yellow">${position}</span></td>
-                            <td><span class="badge-org-blue">${orgName}</span></td>
-                            <td style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
+                            <td class="text-center"><span class="badge-pill-yellow">${position}</span></td>
+                            <td class="text-center"><span class="badge-org-blue">${orgName}</span></td>
+                            <td class="text-center" style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
                             <td class="text-center"><span class="status-indicator-dot">● Active</span></td>
                             <td class="text-center">
                                 <div class="action-icons" style="justify-content: center;">
@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.innerHTML = students.map(student => {
                     const initials = (student.fname || '?').split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
                     const course = student.course || 'BSIT - 3';
-                    const org = orgs.find(o => o.organization_id === student.organization_id)?.name || 'PSITS';
+                    const orgName = orgs.find(o => String(o.organization_id) === String(student.organization_id))?.name || 'Unknown';
                     const attendance = Math.floor(Math.random() * 25) + 75; // Mock 75-100%
                     
                     let barColor = 'green';
@@ -845,8 +845,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge-pill-blue">${course}</span></td>
-                            <td><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${org}</span></td>
+                            <td class="text-center"><span class="badge-pill-blue">${course}</span></td>
+                            <td class="text-center"><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${orgName}</span></td>
                             <td class="text-center">
                                 <div style="display: flex; align-items: center; gap: 12px; width: 160px; margin: 0 auto;">
                                     <div class="progress-container" style="flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; border: 1px solid #f1f5f9;">
