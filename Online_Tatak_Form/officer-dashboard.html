@@ -172,11 +172,11 @@
                         <thead>
                             <tr>
                                 <th>STUDENT</th>
-                                <th>ID NUMBER</th>
-                                <th>COURSE &amp; YEAR</th>
-                                <th>STATUS</th>
-                                <th>ATTENDANCE</th>
-                                <th>ACTION</th>
+                                <th class="text-center">ID NUMBER</th>
+                                <th class="text-center">COURSE &amp; YEAR</th>
+                                <th class="text-center">STATUS</th>
+                                <th class="text-center">ATTENDANCE</th>
+                                <th class="text-center">ACTION</th>
                             </tr>
                         </thead>
                         <tbody id="attendanceTableBody">
@@ -314,6 +314,27 @@
                     <button type="button" id="cancelOfficerEventBtn" class="btn-cancel-ghost">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- QR Display Modal -->
+    <div id="qrDisplayModal" class="modal-overlay" style="display: none;">
+        <div class="confirm-modal-content" style="max-width: 400px; padding: 30px;">
+            <div style="text-align: right; margin-top: -15px; margin-right: -10px;">
+                <button type="button" onclick="closeModal(document.getElementById('qrDisplayModal'))" style="background: none; border: none; font-size: 20px; color: #64748b; cursor: pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="text-align: center;">
+                <h2 id="qrModalEventName" style="margin-bottom: 5px; color: #1e293b; font-size: 1.4rem;">Event QR</h2>
+                <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Students can scan this to mark attendance</p>
+                
+                <div style="background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: inline-block; border: 1px solid #f1f5f9;">
+                    <img id="qrDisplayImg" src="" alt="Event QR Code" style="width: 250px; height: 250px; display: block;">
+                </div>
+                
+                <div style="margin-top: 25px;">
+                    <button onclick="closeModal(document.getElementById('qrDisplayModal'))" class="btn-save-modal" style="width: 100%;">Done</button>
+                </div>
+            </div>
         </div>
     </div>
 

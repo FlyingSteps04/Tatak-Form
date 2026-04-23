@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/organizations/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteOrgModal');
+                        window.TatakApi.setPendingToast('Organization deleted successfully.', 'success');
                         loadAdminOrganizations();
-                        window.TatakApi.showToast('Organization deleted successfully.', 'success');
                     } else {
                         window.TatakApi.showToast(res.error || 'Failed to delete organization.', 'error');
                     }
@@ -128,8 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/events/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteEventModal');
+                        window.TatakApi.setPendingToast('Event deleted successfully.', 'success');
                         loadAdminEventsTable();
-                        window.TatakApi.showToast('Event deleted successfully.', 'success');
+                        loadAdminOverviewMetrics();
                     } else {
                         window.TatakApi.showToast(res.error || 'Failed to delete event.', 'error');
                     }
@@ -193,14 +194,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionBtn = document.getElementById('action-btn');
 
     // State management
-    let pendingDeleteEventId = null;
-    let pendingDeleteOfficerId = null;
-    let pendingDeleteOrgId = null;
+    const getOrgInitials = (name) => {
+        if (!name || name === 'Unknown' || name === '---') return name;
+        const words = name.split(' ');
+        if (words.length === 1) return name.substring(0, 3).toUpperCase();
+        const ignored = ['of', 'the', 'and', 'in', 'at', 'for'];
+        const initials = words
+            .filter(w => !ignored.includes(w.toLowerCase()))
+            .map(w => w[0])
+            .join('')
+            .toUpperCase();
+        return initials.length > 0 ? initials.substring(0, 4) : name.substring(0, 3).toUpperCase();
+    };
 
     window.showSection = function(section, element) {
+        // Persist current section
+        localStorage.setItem('admin_last_section', section);
+
         // Update Active Navigation State
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        if (element) element.classList.add('active');
+        if (element) {
+            element.classList.add('active');
+        } else {
+            // If no element passed, find the link by data-section or text
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('onclick')?.includes(`'${section}'`)) {
+                    item.classList.add('active');
+                }
+            });
+        }
 
         // Reset header to default
         const header = document.querySelector('.dashboard-header');
@@ -682,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const colors = ['blue', 'purple', 'orange', 'green', 'teal', 'red', 'navy', 'maroon'];
                 container.innerHTML = orgs.map((org, i) => {
-                    const short = org.name.substring(0,3).toUpperCase();
+                    const short = getOrgInitials(org.name);
                     const color = colors[i % colors.length];
                     const orgEvents = events.filter(e => String(e.organization_id) === String(org.organization_id));
                     const orgStudents = students.filter(s => String(s.organization_id) === String(org.organization_id));
@@ -734,11 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const topCount = students.filter(s => String(s.organization_id) === String(topOrg.organization_id)).length;
                     const topEv = events.filter(e => String(e.organization_id) === String(topOrg.organization_id)).length;
                     if(document.getElementById('top-org-name')) {
-                        // Use first 3 letters for the big logo, but handle short names
-                        const logoText = topOrg.name.includes(' ') 
-                            ? topOrg.name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0,3)
-                            : topOrg.name.substring(0,3).toUpperCase();
-                        document.getElementById('top-org-name').innerText = logoText;
+                        document.getElementById('top-org-name').innerText = getOrgInitials(topOrg.name);
                     }
                     if(document.getElementById('top-org-full')) document.getElementById('top-org-full').innerText = topOrg.name;
                     if(document.getElementById('top-org-members')) document.getElementById('top-org-members').innerText = topCount;
@@ -827,7 +846,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.innerHTML = students.map(student => {
                     const initials = (student.fname || '?').split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
                     const course = student.course || 'BSIT - 3';
-                    const orgName = orgs.find(o => String(o.organization_id) === String(student.organization_id))?.name || 'Unknown';
+                    const orgFull = orgs.find(o => String(o.organization_id) === String(student.organization_id))?.name || 'Unknown';
+                    const orgName = getOrgInitials(orgFull);
                     const attendance = Math.floor(Math.random() * 25) + 75; // Mock 75-100%
                     
                     let barColor = 'green';
@@ -971,31 +991,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Delete Organization
-    const confirmDeleteOrgBtn = document.getElementById('confirmDeleteOrgBtn');
-    if (confirmDeleteOrgBtn) {
-        confirmDeleteOrgBtn.onclick = async () => {
-            if (!pendingDeleteOrgId) return;
-            confirmDeleteOrgBtn.innerText = 'Deleting...';
-            confirmDeleteOrgBtn.disabled = true;
-            try {
-                const res = await window.TatakApi.apiRequest(`/organizations/${pendingDeleteOrgId}`, { method: 'DELETE' });
-                if (res && res.success) {
-                    window.closeModal('deleteOrgModal');
-                    loadAdminOrganizations();
-                    window.TatakApi.showToast('Organization deleted successfully.', 'success');
-                }
-            } catch (err) {
-                window.TatakApi.showToast('Failed to delete organization.', 'error');
-            }
-            finally { 
-                confirmDeleteOrgBtn.innerText = 'Yes, Delete'; 
-                confirmDeleteOrgBtn.disabled = false;
-                pendingDeleteOrgId = null; 
-            }
-        };
-    }
-
     // Add Event
     const addEventForm = document.getElementById('addEventForm');
     if (addEventForm) {
@@ -1017,9 +1012,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (res && res.success) {
                     window.closeModal('addEventModal');
+                    window.TatakApi.setPendingToast('Event created successfully!', 'success');
                     loadAdminEventsTable();
+                    loadAdminOverviewMetrics();
                     addEventForm.reset();
-                    window.TatakApi.showToast('Event created successfully!', 'success');
                 }
             } catch (err) { 
                 console.error('Error adding event:', err);
@@ -1059,31 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             finally { submitBtn.innerText = 'Update Event'; submitBtn.disabled = false; }
         });
-    }
-
-    // Delete Event
-    const confirmDeleteEventBtn = document.getElementById('confirmDeleteEventBtn');
-    if (confirmDeleteEventBtn) {
-        confirmDeleteEventBtn.onclick = async () => {
-            if (!pendingDeleteEventId) return;
-            confirmDeleteEventBtn.innerText = 'Deleting...';
-            confirmDeleteEventBtn.disabled = true;
-            try {
-                const res = await window.TatakApi.apiRequest(`/events/${pendingDeleteEventId}`, { method: 'DELETE' });
-                if (res && res.success) {
-                    window.closeModal('deleteEventModal');
-                    loadAdminEventsTable();
-                    window.TatakApi.showToast('Event deleted successfully.', 'success');
-                }
-            } catch (err) {
-                window.TatakApi.showToast('Failed to delete event.', 'error');
-            }
-            finally { 
-                confirmDeleteEventBtn.innerText = 'Yes, Delete'; 
-                confirmDeleteEventBtn.disabled = false;
-                pendingDeleteEventId = null; 
-            }
-        };
     }
 
     // Add Officer
@@ -1237,39 +1208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Delete Officer
-    const confirmDeleteOfficerBtn = document.getElementById('confirmDeleteOfficerBtn');
-    if (confirmDeleteOfficerBtn) {
-        confirmDeleteOfficerBtn.onclick = async () => {
-            if (!pendingDeleteOfficerId) return;
-            confirmDeleteOfficerBtn.innerText = 'Removing...';
-            confirmDeleteOfficerBtn.disabled = true;
-            try {
-                // Step 1: Remove from officers table
-                await window.TatakApi.apiRequest(`/officers/${pendingDeleteOfficerId}`, { method: 'DELETE' });
-                
-                // Step 2: Remove from users table to completely delete Joe Smith
-                try {
-                    await window.TatakApi.apiRequest(`/auth/users/${pendingDeleteOfficerId}`, { method: 'DELETE' });
-                } catch (userErr) {
-                    console.warn('Officer record removed, but user account might have other dependencies:', userErr.message);
-                }
-
-                window.closeModal('deleteOfficerModal');
-                loadAdminOfficersTable();
-                window.TatakApi.showToast('Officer and user account removed successfully.', 'success');
-            } catch (err) {
-                console.error('Error removing officer:', err);
-                window.TatakApi.showToast('Failed to remove officer: ' + err.message, 'error');
-            }
-            finally { 
-                confirmDeleteOfficerBtn.innerText = 'Yes, Remove'; 
-                confirmDeleteOfficerBtn.disabled = false;
-                pendingDeleteOfficerId = null; 
-            }
-        };
-    }
-
     // Attendance Override
     const overrideAttendanceForm = document.getElementById('overrideAttendanceForm');
     if (overrideAttendanceForm) {
@@ -1332,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Initial Load
-    showSection('overview', document.querySelector('.nav-item.active'));
+    // Initial Load - Check for persisted section
+    const lastSection = localStorage.getItem('admin_last_section') || 'overview';
+    showSection(lastSection);
 });

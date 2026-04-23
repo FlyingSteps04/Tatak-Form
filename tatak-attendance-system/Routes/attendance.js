@@ -1,10 +1,11 @@
 import express from 'express'
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js'
-import { getAllAttendanceByEventID, getAllAttendanceByUserID, getAttendanceByID, getAttendanceSummary, getAttendanceSummaryByOrg, markAttendance, updateAttendance, overrideAttendance, getEventByToken } from '../Database/attendance.js'
+import { getAllAttendanceByEventID, getAllAttendanceByUserID, getAttendanceByID, getAttendanceSummary, getAttendanceSummaryByOrg, markAttendance, updateAttendance, overrideAttendance, getEventByToken, checkExistingAttendance } from '../Database/attendance.js'
 import { validateAttendance } from '../Middleware/validateAttendance.js'
 import { addNotification } from '../Database/notifications.js'
 import { getEventByID } from '../Database/events.js'
 import { addLog } from '../Database/auditLogs.js'
+import { getUserByID, updateUser } from '../Database/users.js'
 
 const router = express.Router()
 
@@ -53,13 +54,6 @@ router.get('/summary/org/:orgId', authenticateToken, authenticateRole("Admin", "
     }
 })
 
-router.post('/:eventId', authenticateToken, authenticateRole("Student"), validateAttendance, async (req, res) => {
-    const { eventId } = req.params
-    const rows = await markAttendance(req.user.id, eventId)
-    const result = await getAllAttendanceByEventID(eventId)
-    await addNotification(req.user.id, "Attendance Marked", `Your attendance for the event (${result.event_name}) has been logged`, "Attendance")
-    res.json({success: true, message: "Attendance marked", data: rows})
-})
 
 router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     const { id } = req.params
@@ -70,7 +64,9 @@ router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), asyn
 
     res.json({success: true, message: "Attendance updated"})
 })
+
 router.post('/scan', authenticateToken, async (req, res) => {
+    console.log("✅ POST /attendance/scan hit!");
     const { event_token, user_latitude, user_longitude } = req.body;
     const userId = req.user.id;
 
@@ -120,15 +116,25 @@ router.post('/scan', authenticateToken, async (req, res) => {
 
         const radius = 200; // 200 meters
         if (distance > radius) {
-            return res.status(403).json({ 
+            return res.status(400).json({ 
                 error: "Verification failed: You must be at the venue",
+                venue: event.location,
                 distance: `${Math.round(distance)}m away`
             });
         }
 
-        // 6. Record Attendance & Log
-       // await addAttendance(userId, event.event_id, "Present");
-        //await addLog(userId, "Scanned QR", "attendance", event.event_id);
+        // 6. Organization Assignment (If student has no org, assign them to the event's org)
+        const user = await getUserByID(userId);
+        if (user && !user.organization_id) {
+            await updateUser(userId, { organization_id: event.organization_id });
+            console.log(`Auto-assigned user ${userId} to organization ${event.organization_id}`);
+        }
+
+        // 7. Record Attendance & Log
+        await markAttendance(userId, event.event_id, "Present");
+        await addLog(userId, "Scanned QR", "attendance", event.event_id);
+        
+        await addNotification(userId, "Attendance Recorded", `You have successfully attended ${event.name}`, "Attendance");
 
         return res.json({ 
             success: true, 
@@ -139,6 +145,18 @@ router.post('/scan', authenticateToken, async (req, res) => {
         console.error("SCAN ERROR:", error);
         res.status(500).json({ error: "Internal server error" });
     }
+});
+
+router.post('/:eventId', authenticateToken, authenticateRole("Student"), validateAttendance, async (req, res) => {
+    const { eventId } = req.params
+    const rows = await markAttendance(req.user.id, eventId)
+    const result = await getAllAttendanceByEventID(eventId)
+    await addNotification(req.user.id, "Attendance Marked", `Your attendance for the event (${result.event_name}) has been logged`, "Attendance")
+    res.json({success: true, message: "Attendance marked", data: rows})
+})
+
+router.get('/scan', (req, res) => {
+    res.json({ message: "Attendance scan endpoint is active (requires POST)." });
 });
 
 function calculateDistance(lat1, lon1, lat2, lon2) {

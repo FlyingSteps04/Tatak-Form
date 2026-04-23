@@ -158,10 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusCls = getStatusClass(status);
             const initials  = getInitials(fullName);
             
-            // Mock attendance percentage for visual parity with Admin
-            // In a real scenario, this would be fetched from a summary endpoint
-            const mockAttendance = status === 'Present' ? 96 : (status === 'Late' ? 74 : 0);
-            const progressColor = mockAttendance > 80 ? '#10b981' : (mockAttendance > 50 ? '#f59e0b' : '#ef4444');
+            // Real logic: (Attended Events / Total Past Events) * 100
+            const attended = parseInt(item.attended_count) || 0;
+            const total = parseInt(item.total_passed_events) || 1; // Avoid division by zero
+            const attendanceRate = Math.round((attended / total) * 100);
+            
+            const progressColor = attendanceRate > 80 ? '#10b981' : (attendanceRate > 50 ? '#f59e0b' : '#ef4444');
 
             return `
             <tr>
@@ -171,21 +173,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="att-student-name">${fullName}</span>
                     </div>
                 </td>
-                <td><span class="att-id-badge">${idNumber}</span></td>
-                <td><span class="att-course-tag">${course}</span></td>
-                <td><span class="att-status-pill att-status-${statusCls}">${getStatusLabel(status)}</span></td>
-                <td>
-                    <div style="width: 100px;">
+                <td class="text-center"><span class="att-id-badge">${idNumber}</span></td>
+                <td class="text-center"><span class="att-course-tag">${course}</span></td>
+                <td class="text-center"><span class="att-status-pill att-status-${statusCls}">${getStatusLabel(status)}</span></td>
+                <td class="text-center">
+                    <div style="width: 100px; margin: 0 auto;">
                         <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
                             <span style="color: #64748b;">Attendance</span>
-                            <span style="font-weight: 700; color: #1e293b;">${mockAttendance}%</span>
+                            <span style="font-weight: 700; color: #1e293b;">${attendanceRate}%</span>
                         </div>
                         <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
-                            <div style="width: ${mockAttendance}%; height: 100%; background: ${progressColor}; border-radius: 10px;"></div>
+                            <div style="width: ${attendanceRate}%; height: 100%; background: ${progressColor}; border-radius: 10px;"></div>
                         </div>
                     </div>
                 </td>
-                <td>
+                <td class="text-center">
                     <button class="att-action-btn" title="Void Attendance" onclick="window.openVoidAttendanceModal(${item.attendance_id}, '${fullName.replace(/'/g, "\\'")}')">
                         <i class="far fa-edit"></i>
                     </button>
@@ -373,8 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <h4 style="margin: 0; color: #fff;">${ev.name}</h4>
                                     <p style="margin: 5px 0; color: #a0a0a0; font-size: 12px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()}</p>
                                 </div>
-                                <div class="event-badges">
+                                <div class="event-badges" style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
                                     ${badgeHtml}
+                                    <button onclick="window.showEventQR('${ev.qr_code}', '${ev.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.1); border: none; color: #fff; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 4px;"><i class="fas fa-qrcode"></i> Show QR</button>
                                 </div>
                             </div>
                         `;
@@ -494,14 +497,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const openModal = (modalElement) => {
+    window.openModal = (modalElement) => {
         if (modalElement) {
             modalElement.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
     };
 
-    const closeModal = (modalElement) => {
+    window.closeModal = (modalElement) => {
         if (modalElement) {
             modalElement.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -553,6 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
                                 <span class="badge ${badgeClass}" style="white-space: nowrap; ${badgeText==='Upcoming'?'background: rgba(255, 165, 2, 0.2); color: #ffa502;':''}">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
+                                    <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
                                     <button class="icon-edit" onclick="window.openOfficerEditEvent(${ev.event_id}, '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}')" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
                                     <button class="icon-delete" onclick="alert('Delete functionality coming soon')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
@@ -592,6 +596,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (topbarLogout) topbarLogout.addEventListener('click', () => openModal(logoutModal));
     if (stayBtn) stayBtn.addEventListener('click', () => closeModal(logoutModal));
     
+    // QR Modal Logic
+    window.showEventQR = (qrUrl, eventName) => {
+        const modal = document.getElementById('qrDisplayModal');
+        const img = document.getElementById('qrDisplayImg');
+        const title = document.getElementById('qrModalEventName');
+        
+        if (!qrUrl) {
+            alert('QR code not generated for this event yet.');
+            return;
+        }
+
+        // Handle path formatting (backend saves /qr/token.png, but frontend might need full URL)
+        const baseUrl = window.TatakApi.API_BASE_URL || 'http://localhost:3002';
+        const fullUrl = qrUrl.startsWith('http') ? qrUrl : baseUrl + qrUrl;
+        
+        img.src = fullUrl;
+        title.textContent = eventName;
+        openModal(modal);
+    };
+
     if (confirmBtn) {
         confirmBtn.addEventListener('click', () => {
             performLogout();

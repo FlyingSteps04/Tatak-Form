@@ -3,6 +3,7 @@ import { pool } from '../Database/connection.js'
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js'
 import { addOrganizationOfficer, deleteOrganizationOfficer, getAllOrganizationOfficers, getOrganizationOfficerByID, updateOrganizationOfficer } from '../Database/organizationOfficer.js'
 import { addLog } from '../Database/auditLogs.js'
+import { updateUser } from '../Database/users.js'
 
 const router = express.Router()
 
@@ -66,14 +67,38 @@ router.post('/', authenticateToken, authenticateRole("Admin"), async (req, res) 
 })
 
 router.put('/:id', authenticateToken, authenticateRole("Admin"), async (req, res) => {
-    const { id } = req.params
-    const { organizationID, position, status } = req.body
+    try {
+        const { id } = req.params
+        const { organizationID, organization_id, position, status, fname } = req.body
+        
+        // Handle both naming conventions for organization ID
+        const finalOrgId = organizationID || organization_id
 
-    const officer = await updateOrganizationOfficer(id, organizationID, position, status)
+        if (!finalOrgId) {
+            return res.status(400).json({ success: false, error: "Organization ID is required" })
+        }
 
-    if(!officer.affectedRows) return res.status(400).json({error: "Officer was not updated"})
-    await addLog(req.user.id, "Update Officer", "organization_officer", id)
-    res.json({success: true, message: "Officer has been updated"})
+        // 1. Update the officer record (org, position, status)
+        const result = await updateOrganizationOfficer(id, finalOrgId, position, status)
+
+        if (!result.affectedRows) {
+            return res.status(400).json({ success: false, error: "Officer record not found or no changes made" })
+        }
+
+        // 2. If fname is provided, update the associated user's name
+        if (fname) {
+            const officerData = await getOrganizationOfficerByID(id)
+            if (officerData && officerData.user_id) {
+                await updateUser(officerData.user_id, { fname })
+            }
+        }
+
+        await addLog(req.user.id, "Update Officer", "organization_officer", id)
+        res.json({ success: true, message: "Officer has been updated successfully" })
+    } catch (err) {
+        console.error('PUT /officers/:id error:', err)
+        res.status(500).json({ success: false, error: "Server error while updating officer" })
+    }
 })
 
 router.delete('/:id', authenticateToken, authenticateRole("Admin"), async (req, res) => {

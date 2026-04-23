@@ -29,7 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let html5QrCode;
 
-    // 2. Start Scan Button Logic
+    // Expose start scanner function globally
+    window.startQRScan = () => {
+        // Switch to Overview section first since that's where the reader div is
+        resetNavigation();
+        if (navOverview) navOverview.classList.add('active');
+        if (sectionOverview) sectionOverview.style.display = 'block';
+        
+        // Scroll to the scanner section
+        const scannerSection = document.querySelector('.qr-instructions');
+        if (scannerSection) scannerSection.scrollIntoView({ behavior: 'smooth' });
+
+        // Trigger the scan button click
+        if (startScanBtn) startScanBtn.click();
+    };
+
     startScanBtn.addEventListener('click', () => {
         // Toggle UI views
         defaultView.style.display = 'none';
@@ -38,58 +52,100 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize the QR Code reader on the 'reader' div
         html5QrCode = new Html5Qrcode("reader");
 
-        // Function to run when a QR code is successfully scanned
-        // Function to run when a QR code is successfully scanned
-const onScanSuccess = (decodedText, decodedResult) => {
-    stopScanner(); // Stop camera immediately
-    alert(`Attendance Sucess!`); // Optional: show raw data for debugging
-    // 1. Parse the scanned QR data
+    const showScanResult = (success, message, extra = {}) => {
+        const modal = document.getElementById('scanResultModal');
+        const icon = document.getElementById('scanResultIcon');
+        const title = document.getElementById('scanResultTitle');
+        const msg = document.getElementById('scanResultMessage');
+        const status = document.getElementById('scanResultStatus');
+        const distRow = document.getElementById('scanResultDistanceRow');
+        const dist = document.getElementById('scanResultDistance');
+        const venueRow = document.getElementById('scanResultVenueRow');
+        const venue = document.getElementById('scanResultVenue');
 
-    console.log("Decoded QR Data:", decodedText); // Debug log to see raw QR content
-    let qrData;
-    try {
-        qrData = JSON.parse(decodedText);
-    } catch (e) {
-        alert("Invalid QR Code format.");
-        return;
-    }
-
-    // 2. Get User Location and Send to Backend
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            const payload = {
-                event_token: qrData.event_token, // From QR code
-                user_latitude: position.coords.latitude,
-                user_longitude: position.coords.longitude
-            };
-
-            try {
-                // Call your API (Assuming window.TatakApi.apiRequest is your helper)
-                const response = await window.TatakApi.apiRequest('/attendance/scan', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-});
-                
-                if (response.success) {
-                    alert(`Success: ${response.message}`);
-                    // Optional: reload history to show new record
-                    //loadStudentAttendance(); 
-                } else {
-                    alert(`Error: ${response.error}`);
-                }
-            } catch (err) {
-                // alert("Failed to process attendance. Please try again.");
-                // console.error("Scan API Error:", err);
-
+        if (success) {
+            icon.style.background = 'rgba(16, 185, 129, 0.1)';
+            icon.style.color = '#10b981';
+            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            title.textContent = 'Success!';
+            title.style.color = '#1e293b';
+            status.textContent = 'CONFIRMED';
+            status.style.color = '#10b981';
+            distRow.style.display = 'none';
+            venueRow.style.display = 'none';
+        } else {
+            icon.style.background = 'rgba(239, 68, 68, 0.1)';
+            icon.style.color = '#ef4444';
+            icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+            title.textContent = 'Scan Failed';
+            title.style.color = '#ef4444';
+            status.textContent = 'REJECTED';
+            status.style.color = '#ef4444';
+            
+            if (extra.venue) {
+                venueRow.style.display = 'flex';
+                venue.textContent = extra.venue;
+            } else {
+                venueRow.style.display = 'none';
             }
-        }, (geoError) => {
-           // console.error("Geolocation Error:", geoError);
-            alert("Location access is required to verify attendance.");
-        });
-    } else {
-        alert("Your browser does not support Geolocation.");
-    }
-};
+
+            if (extra.distance) {
+                distRow.style.display = 'flex';
+                dist.textContent = extra.distance;
+            } else {
+                distRow.style.display = 'none';
+            }
+        }
+
+        msg.textContent = message;
+        modal.style.display = 'flex';
+    };
+
+    // Function to run when a QR code is successfully scanned
+    const onScanSuccess = (decodedText, decodedResult) => {
+        stopScanner(); // Stop camera immediately
+        
+        let qrData;
+        try {
+            qrData = JSON.parse(decodedText);
+        } catch (e) {
+            showScanResult(false, "Invalid QR Code format. Please scan a valid event code.");
+            return;
+        }
+
+        // 2. Get User Location and Send to Backend
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const payload = {
+                    event_token: qrData.event_token,
+                    user_latitude: position.coords.latitude,
+                    user_longitude: position.coords.longitude
+                };
+
+                try {
+                    const response = await window.TatakApi.apiRequest('/attendance/scan', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (response.success) {
+                        showScanResult(true, response.message || "Your attendance has been recorded successfully.");
+                    } else {
+                        showScanResult(false, response.error || "Attendance verification failed.", { 
+                            distance: response.distance,
+                            venue: response.venue
+                        });
+                    }
+                } catch (err) {
+                    showScanResult(false, err.message || "Connection error. Please try again.");
+                }
+            }, (geoError) => {
+                showScanResult(false, "Location access denied. You must enable GPS to verify attendance.");
+            });
+        } else {
+            showScanResult(false, "Your browser does not support geolocation.");
+        }
+    };
 
         // Configuration for the scanner
         const config = { 

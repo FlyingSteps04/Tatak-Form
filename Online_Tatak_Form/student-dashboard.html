@@ -49,7 +49,7 @@
                     </div>
                 </header>
 
-                <div class="action-banner">
+                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
@@ -89,7 +89,7 @@
                             <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
                             <div class="card-footer">
                                 <span class="expiry-text">Code expired soon</span>
-                                <button class="btn-confirm"><i class="fas fa-check"></i> Confirm</button>
+                                <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
                             </div>
                         </div>
 
@@ -123,7 +123,7 @@
                     </div>
                 </header>
 
-                <div class="action-banner">
+                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
@@ -140,7 +140,7 @@
                         <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
                         <div class="card-footer">
                             <span class="expiry-text">Code expired soon</span>
-                            <button class="btn-confirm"><i class="fas fa-check"></i> Confirm</button>
+                            <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
                         </div>
                     </div>
 
@@ -153,7 +153,7 @@
                         <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
                         <div class="card-footer">
                             <span class="expiry-text">Code expired soon</span>
-                            <button class="btn-confirm"><i class="fas fa-check"></i> Confirm</button>
+                            <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
                         </div>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
                     </div>
                 </header>
 
-                <div class="action-banner">
+                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
@@ -226,7 +226,7 @@
                     </div>
                 </header>
 
-                <div class="action-banner">
+                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
@@ -289,7 +289,7 @@
                     </div>
                 </header>
 
-                <div class="action-banner">
+                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
@@ -337,6 +337,34 @@
                     </div>
                 </div>
             </div>
+            <!-- Scan Result Modal -->
+            <div id="scanResultModal" class="modal-overlay" style="display: none;">
+                <div class="confirm-modal-content" style="max-width: 400px; padding: 40px; text-align: center;">
+                    <div id="scanResultIcon" class="logout-icon-container" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 80px; height: 80px; font-size: 40px; margin: 0 auto 20px;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 id="scanResultTitle" style="margin-bottom: 10px; font-size: 1.8rem; color: #1e293b;">Success!</h2>
+                    <p id="scanResultMessage" style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 30px;">Your attendance has been recorded successfully.</p>
+                    
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 30px; text-align: left; border: 1px solid #f1f5f9;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="color: #64748b; font-size: 0.85rem;">Status:</span>
+                            <strong id="scanResultStatus" style="color: #10b981; font-size: 0.85rem;">CONFIRMED</strong>
+                        </div>
+                        <div id="scanResultVenueRow" style="display: none; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="color: #64748b; font-size: 0.85rem;">Venue:</span>
+                            <strong id="scanResultVenue" style="color: #1e293b; font-size: 0.85rem;">---</strong>
+                        </div>
+                        <div id="scanResultDistanceRow" style="display: none; justify-content: space-between;">
+                            <span style="color: #64748b; font-size: 0.85rem;">Distance:</span>
+                            <strong id="scanResultDistance" style="color: #ef4444; font-size: 0.85rem;">---</strong>
+                        </div>
+                    </div>
+
+                    <button onclick="document.getElementById('scanResultModal').style.display = 'none'; location.reload();" class="btn-confirm-logout" style="width: 100%; padding: 15px; background: #1e3a8a;">Continue</button>
+                </div>
+            </div>
+
             <div id="logoutModal" class="modal-overlay" style="display: none;">
                 <div class="confirm-modal-content">
                     <div class="logout-icon-container">

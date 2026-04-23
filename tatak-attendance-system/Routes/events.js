@@ -147,10 +147,19 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), a
         const result = await deleteEvent(id);
         if (!result.affectedRows) return res.status(400).json({ error: "Delete failed" });
 
-        // Optional: Delete physical QR file
-        if (event.qr_code_path) {
-            const fullPath = path.join(process.cwd(), event.qr_code_path);
-            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        // Delete physical QR file from storage
+        if (event.qr_code) {
+            const relativePath = event.qr_code.startsWith('/') ? event.qr_code.substring(1) : event.qr_code;
+            const fullPath = path.resolve(process.cwd(), relativePath);
+            
+            try {
+                if (fs.existsSync(fullPath)) {
+                    fs.unlinkSync(fullPath);
+                    console.log("✅ Deleted QR file:", fullPath);
+                }
+            } catch (fsErr) {
+                console.error("❌ Failed to delete QR file:", fsErr);
+            }
         }
 
         await addLog(req.user.id, "Delete Event", "events", id);

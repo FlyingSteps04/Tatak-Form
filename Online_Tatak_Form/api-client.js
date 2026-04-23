@@ -59,6 +59,26 @@ async function apiRequest(path, options = {}) {
     return payload;
 }
 
+/**
+ * Stores a message to be shown after the next page load.
+ */
+function setPendingToast(message, type = 'info') {
+    sessionStorage.setItem('tatak_pending_toast', JSON.stringify({ message, type }));
+}
+
+/**
+ * Checks for and displays any pending toasts from a previous session.
+ */
+function checkPendingToast() {
+    const pending = sessionStorage.getItem('tatak_pending_toast');
+    if (pending) {
+        const { message, type } = JSON.parse(pending);
+        sessionStorage.removeItem('tatak_pending_toast');
+        // Small delay to ensure DOM is ready
+        setTimeout(() => showToast(message, type), 100);
+    }
+}
+
 function showToast(message, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -87,12 +107,15 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
-
 window.TatakApi = {
     API_BASE_URL,
     getAuthToken,
     clearAuthAndRedirect,
     apiRequest,
-    showToast
+    showToast,
+    setPendingToast
 };
+
+// Auto-check for pending toasts on every load
+checkPendingToast();
 

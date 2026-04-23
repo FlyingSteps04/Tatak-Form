@@ -14,7 +14,9 @@ export const getAllAttendanceByUserID = async (userId) => {
 export const getAllAttendanceByEventID = async (eventId) => {
     const query = `SELECT a.attendance_id, a.status, a.timestamp,
                     u.fname, u.stud_id_number, u.username,
-                    e.name AS event_name
+                    e.name AS event_name,
+                    (SELECT COUNT(*) FROM attendance a2 WHERE a2.user_id = u.id AND a2.status IN ('Present', 'Late')) as attended_count,
+                    (SELECT COUNT(*) FROM events WHERE start_date <= NOW()) as total_passed_events
                     FROM attendance a
                     JOIN users u ON a.user_id = u.id
                     JOIN events e ON a.event_id = e.event_id
@@ -93,3 +95,9 @@ export const getAttendanceSummaryByOrg = async (orgId) => {
     const [rows] = await pool.query(query, [orgId]);
     return rows[0];
 };
+
+export const checkExistingAttendance = async (userId, eventId) => {
+    const query = `SELECT * FROM attendance WHERE user_id = ? AND event_id = ?`
+    const [rows] = await pool.query(query, [userId, eventId])
+    return rows[0]
+}
