@@ -5,11 +5,13 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js';
-import { addEvent, deleteEvent, getAllEvents, getEventByID, updateEvent } from '../Database/events.js';
+import { addEvent, deleteEvent, getAllEvents, getEventByID, updateEvent, approveEvent } from '../Database/events.js';
 import { getOrganizationByID } from '../Database/organizations.js';
 import { addLog } from '../Database/auditLogs.js';
 import { getAllStudents } from '../Database/users.js';
 import { addNotification } from '../Database/notifications.js';
+
+import { pool } from '../Database/connection.js';
 
 const router = express.Router();
 
@@ -34,7 +36,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
 // CREATE EVENT
 router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
-    const { organization_id, name, location, start_date, end_date } = req.body;
+    const { organization_id, name, location, start_date, end_date, expected_attendance } = req.body;
     let latitude, longitude;
 
     try {
@@ -42,12 +44,18 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
         const org = await getOrganizationByID(organization_id);
         if (!org) return res.status(404).json({ error: "Organization not found" });
 
-        const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
-            params: { q: location, format: "json", limit: 1 },
-            headers: { "User-Agent": "TatakAttendance/1.0" }
-        });
-        latitude = geoRes.data?.[0] ? parseFloat(geoRes.data[0].lat) : 0;
-        longitude = geoRes.data?.[0] ? parseFloat(geoRes.data[0].lon) : 0;
+        try {
+            const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
+                params: { q: location, format: "json", limit: 1 },
+                headers: { "User-Agent": "TatakAttendance/1.0" }
+            });
+            latitude = geoRes.data?.[0] ? parseFloat(geoRes.data[0].lat) : 0;
+            longitude = geoRes.data?.[0] ? parseFloat(geoRes.data[0].lon) : 0;
+        } catch (geoErr) {
+            console.warn("Geocoding failed, using 0,0:", geoErr.message);
+            latitude = 0;
+            longitude = 0;
+        }
 
         // 2. QR GENERATION - THE FIX
         const eventToken = crypto.randomUUID();
@@ -76,10 +84,14 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
             return res.status(500).json({ error: "Failed to write QR file to disk" });
         }
 
+        // Determine initial approval status
+        const initialStatus = req.user.role === 'Admin' ? 'Approved' : 'Pending';
+
         // 3. Database Insert
         const result = await addEvent(
             organization_id, name, location, latitude, longitude, 
-            start_date, end_date, req.user.id, qrPublicPath, eventToken
+            start_date, end_date, req.user.id, qrPublicPath, eventToken, initialStatus,
+            expected_attendance ? parseInt(expected_attendance) : null
         );
 
         const insertId = result?.insertId || result?.[0]?.insertId || result?.id;
@@ -95,10 +107,10 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
 // UPDATE EVENT
 router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     const { id } = req.params;
-    const { newName, newLocation, newStart_date, newEnd_date } = req.body;
+    const { name, location, start_date, end_date, expected_attendance } = req.body;
     let { latitude, longitude } = req.body; // Allow manual override if needed
 
-    if (!newName || !newLocation || !newStart_date) {
+    if (!name || !location || !start_date) {
         return res.status(400).json({ error: "Name, location, and start date are required" });
     }
 
@@ -107,23 +119,31 @@ router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), asyn
         if (!existingEvent) return res.status(404).json({ error: "Event not found" });
 
         // Update coordinates only if location changed
-        if (existingEvent.location !== newLocation) {
-            const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
-                params: { q: newLocation, format: "json", limit: 1 },
-                headers: { "User-Agent": "TatakAttendance/1.0" }
-            });
-            if (geoRes.data?.length > 0) {
-                latitude = parseFloat(geoRes.data[0].lat);
-                longitude = parseFloat(geoRes.data[0].lon);
-            } else {
-                return res.status(400).json({ error: "New location not found" });
+        if (existingEvent.location !== location) {
+            try {
+                const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
+                    params: { q: location, format: "json", limit: 1 },
+                    headers: { "User-Agent": "TatakAttendance/1.0" }
+                });
+                if (geoRes.data?.length > 0) {
+                    latitude = parseFloat(geoRes.data[0].lat);
+                    longitude = parseFloat(geoRes.data[0].lon);
+                } else {
+                    // Fallback to 0,0 instead of failing completely
+                    latitude = 0;
+                    longitude = 0;
+                }
+            } catch (geoErr) {
+                console.warn("Geocoding failed during update, using 0,0:", geoErr.message);
+                latitude = 0;
+                longitude = 0;
             }
         } else {
             latitude = existingEvent.latitude;
             longitude = existingEvent.longitude;
         }
 
-        const result = await updateEvent(id, newName, newLocation, latitude, longitude, newStart_date, newEnd_date, req.user.id);
+        const result = await updateEvent(id, name, location, latitude, longitude, start_date, end_date, req.user.id, expected_attendance);
 
         if (!result.affectedRows) return res.status(404).json({ error: "Update failed" });
 
@@ -136,6 +156,28 @@ router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), asyn
     }
 });
 
+// APPROVE EVENT
+router.put('/:id/approve', authenticateToken, authenticateRole("Admin"), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const event = await getEventByID(id);
+        
+        if (!event) return res.status(404).json({ error: "Event not found" });
+
+        const result = await approveEvent(id);
+        if (!result.affectedRows) return res.status(400).json({ error: "Approval failed" });
+
+        await addLog(req.user.id, "Approve Event", "events", id);
+        
+        // Notify the creator that their event was approved
+        await addNotification(event.created_by, "Event Approved", `Your event '${event.name}' has been approved and is now live.`, "System");
+
+        res.json({ success: true, message: "Event approved successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // DELETE EVENT
 router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     try {
@@ -143,6 +185,9 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), a
         const event = await getEventByID(id);
         
         if (!event) return res.status(404).json({ error: "Event not found" });
+
+        // Delete all attendance records tied to this event first (FK constraint)
+        await pool.query('DELETE FROM attendance WHERE event_id = ?', [id]);
 
         const result = await deleteEvent(id);
         if (!result.affectedRows) return res.status(400).json({ error: "Delete failed" });

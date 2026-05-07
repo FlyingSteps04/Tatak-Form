@@ -23,12 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const attendanceFooterText = document.getElementById('attendanceFooterText');
     const eventSelect = document.getElementById('eventSelect');
     
-    // Void Modal Elements
-    const voidAttendanceModal = document.getElementById('voidAttendanceModal');
-    const voidStudentName = document.getElementById('voidStudentName');
-    const voidAttendanceIdInput = document.getElementById('voidAttendanceId');
-    const confirmVoidBtn = document.getElementById('confirmVoidBtn');
-    const cancelVoidBtn = document.getElementById('cancelVoidBtn');
+    // Edit Attendance Modal Elements
+    const editAttendanceModal = document.getElementById('editAttendanceModal');
+    const editStudentName = document.getElementById('editStudentName');
+    const editAttendanceIdInput = document.getElementById('editAttendanceId');
+    const editAttendanceStatusSelect = document.getElementById('editAttendanceStatus');
+    const editAttendanceReasonInput = document.getElementById('editAttendanceReason');
+    const confirmEditBtn = document.getElementById('confirmEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
 
     // Cache of all loaded rows for client-side search filtering
     let _allAttendanceRows = [];
@@ -104,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function getStatusClass(status) {
         const s = (status || '').toLowerCase();
-        if (s === 'late') return 'late';
+        if (s === 'late' || s === 'excused') return 'late';
         if (s === 'absent') return 'absent';
         return 'present'; // Present, Attended, or any other = green
     }
@@ -116,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const s = (status || '').toLowerCase();
         if (s === 'late') return 'Late';
         if (s === 'absent') return 'Absent';
+        if (s === 'excused') return 'Excused';
         return 'Present';
     }
 
@@ -161,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Real logic: (Attended Events / Total Past Events) * 100
             const attended = parseInt(item.attended_count) || 0;
             const total = parseInt(item.total_passed_events) || 1; // Avoid division by zero
-            const attendanceRate = Math.round((attended / total) * 100);
+            const attendanceRate = Math.min(100, Math.round((attended / total) * 100));
             
             const progressColor = attendanceRate > 80 ? '#10b981' : (attendanceRate > 50 ? '#f59e0b' : '#ef4444');
 
@@ -188,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
                 <td class="text-center">
-                    <button class="att-action-btn" title="Void Attendance" onclick="window.openVoidAttendanceModal(${item.attendance_id}, '${fullName.replace(/'/g, "\\'")}')">
+                    <button class="att-action-btn" title="Edit Attendance" onclick="window.openEditAttendanceModal(${item.attendance_id}, '${fullName.replace(/'/g, "\\'")}', '${status}')">
                         <i class="far fa-edit"></i>
                     </button>
                 </td>
@@ -370,14 +373,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         else badgeHtml = '<span class="badge badge-closed">Closed</span>';
                         
                         return `
-                            <div class="event-item-row" style="margin-bottom: 15px;">
+                            <div class="event-item-row" style="margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
                                 <div class="event-info">
-                                    <h4 style="margin: 0; color: #fff;">${ev.name}</h4>
-                                    <p style="margin: 5px 0; color: #a0a0a0; font-size: 12px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()}</p>
+                                    <h4 style="margin: 0; color: #1e293b; font-size: 14px;">${ev.name}</h4>
+                                    <p style="margin: 4px 0; color: #64748b; font-size: 11px; line-height: 1.4;">${ev.location || 'TBA'} • ${s.toLocaleDateString()}</p>
                                 </div>
-                                <div class="event-badges" style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                                <div class="event-badges" style="display: flex; align-items: center;">
                                     ${badgeHtml}
-                                    <button onclick="window.showEventQR('${ev.qr_code}', '${ev.name.replace(/'/g, "\\'")}')" style="background: rgba(255,255,255,0.1); border: none; color: #fff; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 4px;"><i class="fas fa-qrcode"></i> Show QR</button>
                                 </div>
                             </div>
                         `;
@@ -387,37 +389,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 5. Populate Recent Check-ins
             const recentCheckinsContainer = document.getElementById('officer-overview-recent-checkins');
-            if (recentCheckinsContainer) {
-                if (targetLiveEvent) {
-                    const eventAttendanceRes = await window.TatakApi.apiRequest(`/attendance/personnel/${targetLiveEvent.event_id || targetLiveEvent.id}`).catch(() => ({ data: [] }));
-                    const eventAttendance = Array.isArray(eventAttendanceRes.data) ? eventAttendanceRes.data : [];
+            const recentCheckinsHeader = document.querySelector('.list-container:nth-child(2) .list-header');
+            
+            if (recentCheckinsContainer && recentCheckinsHeader) {
+                // Add event filter if not already there
+                let filterSelect = document.getElementById('overview-checkin-filter');
+                if (!filterSelect) {
+                    const selectHtml = `
+                        <select id="overview-checkin-filter" style="font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; color: #64748b; outline: none; max-width: 150px;">
+                            ${events.map(ev => `<option value="${ev.event_id || ev.id}" ${targetLiveEvent && (ev.event_id || ev.id) === (targetLiveEvent.event_id || targetLiveEvent.id) ? 'selected' : ''}>${ev.name}</option>`).join('')}
+                        </select>
+                    `;
+                    recentCheckinsHeader.insertAdjacentHTML('beforeend', selectHtml);
+                    filterSelect = document.getElementById('overview-checkin-filter');
                     
-                    if (eventAttendance.length === 0) {
-                        recentCheckinsContainer.innerHTML = '<p style="padding: 20px; color: #a0a0a0;">No check-ins yet for ' + targetLiveEvent.name + '.</p>';
-                    } else {
-                        // Show latest 5
-                        const recent5 = eventAttendance.slice(0, 5);
-                        recentCheckinsContainer.innerHTML = recent5.map(rec => {
-                            return `
-                                <div class="checkin-user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <div class="user-profile" style="display: flex; gap: 10px; align-items: center;">
-                                        <div style="width: 35px; height: 35px; background: #2b2b40; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #7f56d9;">
-                                            ${(rec.fname || 'U').charAt(0)}
+                    filterSelect.addEventListener('change', async (e) => {
+                        const eventId = e.target.value;
+                        const eventName = e.target.options[e.target.selectedIndex].text;
+                        renderRecentCheckins(eventId, eventName);
+                    });
+                }
+
+                async function renderRecentCheckins(eventId, eventName) {
+                    recentCheckinsContainer.innerHTML = '<p style="padding: 20px; color: #a0a0a0; font-size: 12px;"><i class="fas fa-spinner fa-spin"></i> Loading check-ins...</p>';
+                    try {
+                        const eventAttendanceRes = await window.TatakApi.apiRequest(`/attendance/personnel/${eventId}`).catch(() => ({ data: [] }));
+                        const eventAttendance = Array.isArray(eventAttendanceRes.data) ? eventAttendanceRes.data : [];
+                        
+                        if (eventAttendance.length === 0) {
+                            recentCheckinsContainer.innerHTML = `<p style="padding: 20px; color: #a0a0a0; font-size: 12px;">No check-ins yet for <strong>${eventName}</strong>.</p>`;
+                        } else {
+                            // Show latest 5
+                            const recent5 = eventAttendance.slice(0, 5);
+                            recentCheckinsContainer.innerHTML = recent5.map(rec => {
+                                const initials = getInitials(rec.fname || 'U');
+                                const status = rec.status || 'Present';
+                                
+                                let statusBg = '#dcfce7'; // Present (Green)
+                                let statusColor = '#16a34a';
+                                
+                                if (status === 'Absent') {
+                                    statusBg = '#fee2e2'; // Red
+                                    statusColor = '#ef4444';
+                                } else if (status === 'Late' || status === 'Excused') {
+                                    statusBg = '#fef3c7'; // Yellow
+                                    statusColor = '#f59e0b';
+                                }
+
+                                return `
+                                    <div class="checkin-user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                                        <div class="user-profile" style="display: flex; gap: 10px; align-items: center;">
+                                            <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; font-size: 11px;">
+                                                ${initials}
+                                            </div>
+                                            <div class="user-text">
+                                                <h4 style="margin: 0; color: #1e293b; font-size: 13px;">${rec.fname || 'Unknown Student'}</h4>
+                                                <p style="margin: 2px 0 0; color: #64748b; font-size: 11px;">${rec.stud_id_number || rec.student_id_number || 'N/A'}</p>
+                                            </div>
                                         </div>
-                                        <div class="user-text">
-                                            <h4 style="margin: 0; color: #fff; font-size: 14px;">${rec.fname || 'Unknown Student'}</h4>
-                                            <p style="margin: 3px 0 0; color: #a0a0a0; font-size: 12px;">${rec.student_id_number || 'N/A'}</p>
+                                        <div class="user-actions">
+                                            <span class="badge-status attended" style="background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">${status}</span>
                                         </div>
                                     </div>
-                                    <div class="user-actions">
-                                        <span class="badge-status attended" style="background: rgba(46, 213, 115, 0.2); color: #2ed573; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${rec.status || 'Present'}</span>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('');
+                                `;
+                            }).join('');
+                        }
+                    } catch (err) {
+                        recentCheckinsContainer.innerHTML = '<p style="padding: 20px; color: #ef4444; font-size: 12px;">Error loading check-ins.</p>';
                     }
-                } else {
-                    recentCheckinsContainer.innerHTML = '<p style="padding: 20px; color: #a0a0a0;">No active events to show check-ins.</p>';
+                }
+
+                // Initial load
+                if (filterSelect.value) {
+                    renderRecentCheckins(filterSelect.value, filterSelect.options[filterSelect.selectedIndex].text);
+                } else if (targetLiveEvent) {
+                    renderRecentCheckins(targetLiveEvent.event_id || targetLiveEvent.id, targetLiveEvent.name);
                 }
             }
 
@@ -455,44 +501,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Void Attendance Logic
-    window.openVoidAttendanceModal = (attendanceId, studentName) => {
-        if (voidStudentName) voidStudentName.textContent = studentName;
-        if (voidAttendanceIdInput) voidAttendanceIdInput.value = attendanceId;
-        openModal(voidAttendanceModal);
+    // Edit Attendance Logic
+    window.openEditAttendanceModal = (attendanceId, studentName, currentStatus) => {
+        if (editStudentName) editStudentName.textContent = studentName;
+        if (editAttendanceIdInput) editAttendanceIdInput.value = attendanceId;
+        if (editAttendanceStatusSelect) editAttendanceStatusSelect.value = currentStatus || 'Present';
+        if (editAttendanceReasonInput) editAttendanceReasonInput.value = ''; // Clear previous
+        openModal(editAttendanceModal);
     };
 
-    if (cancelVoidBtn) cancelVoidBtn.addEventListener('click', () => closeModal(voidAttendanceModal));
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => closeModal(editAttendanceModal));
     
-    if (confirmVoidBtn) {
-        confirmVoidBtn.addEventListener('click', async () => {
-            const attendanceId = voidAttendanceIdInput.value;
+    if (confirmEditBtn) {
+        confirmEditBtn.addEventListener('click', async () => {
+            const attendanceId = editAttendanceIdInput.value;
+            const status = editAttendanceStatusSelect.value;
+            const remarks = editAttendanceReasonInput.value;
+
             if (!attendanceId) return;
 
-            confirmVoidBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Voiding...';
-            confirmVoidBtn.disabled = true;
+            confirmEditBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            confirmEditBtn.disabled = true;
 
             try {
                 const res = await window.TatakApi.apiRequest(`/attendance/${attendanceId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ status: 'Absent' }) // Voiding basically means marking as absent
+                    body: JSON.stringify({ 
+                        status: status,
+                        remarks: remarks
+                    })
                 });
 
                 if (res.success) {
-                    closeModal(voidAttendanceModal);
+                    closeModal(editAttendanceModal);
                     // Refresh the table
                     if (eventSelect && eventSelect.value) {
                         loadEventAttendance(eventSelect.value);
                     }
+                    
+                    // Show success notification for attendance
+                    const successModal = document.getElementById('successModal');
+                    if (successModal) {
+                        document.getElementById('successModalTitle').textContent = 'Attendance Updated';
+                        document.getElementById('successModalMessage').textContent = 'The student status has been successfully updated.';
+                        openModal(successModal);
+                    }
                 } else {
-                    alert('Failed to void attendance: ' + (res.error || 'Unknown error'));
+                    alert('Failed to update attendance: ' + (res.error || 'Unknown error'));
                 }
             } catch (err) {
-                console.error('Error voiding attendance:', err);
-                alert('An error occurred while voiding attendance.');
+                console.error('Error updating attendance:', err);
+                alert('An error occurred while updating attendance.');
             } finally {
-                confirmVoidBtn.innerHTML = 'Yes, Void it';
-                confirmVoidBtn.disabled = false;
+                confirmEditBtn.innerHTML = 'Update Attendance';
+                confirmEditBtn.disabled = false;
             }
         });
     }
@@ -557,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="badge ${badgeClass}" style="white-space: nowrap; ${badgeText==='Upcoming'?'background: rgba(255, 165, 2, 0.2); color: #ffa502;':''}">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
-                                    <button class="icon-edit" onclick="window.openOfficerEditEvent(${ev.event_id}, '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}')" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
+                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
                                     <button class="icon-delete" onclick="alert('Delete functionality coming soon')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
                             </div>
@@ -579,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Expose edit function to global scope for the inline onclick handler
-    window.openOfficerEditEvent = (id, name, date, venue, startStr, endStr, desc) => {
+    window.openOfficerEditEvent = (id, name, date, venue, startStr, endStr, desc, capacity) => {
         officerEventModalTitle.textContent = 'Edit Event';
         officerEventIdInput.value = id;
         document.getElementById('officerEventName').value = name;
@@ -588,7 +650,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('officerEventStartTime').value = startStr;
         document.getElementById('officerEventEndTime').value = endStr || '';
         document.getElementById('officerEventDesc').value = desc || '';
-        // Note: capacity isn't tracked in backend events table currently, skipping for now
+        const capEl = document.getElementById('officerEventCapacity');
+        if (capEl) capEl.value = capacity || '';
         openModal(officerEventModal);
     };
 
@@ -648,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const startTime = document.getElementById('officerEventStartTime').value;
             const endTime = document.getElementById('officerEventEndTime').value;
             const desc = document.getElementById('officerEventDesc').value;
+            const capacity = document.getElementById('officerEventCapacity')?.value;
 
             // Combine date and time for backend
             const startDate = `${date}T${startTime}:00`;
@@ -659,7 +723,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 start_date: startDate,
                 end_date: endDate,
                 location: venue,
-                organization_id: _officerOrgId // automatically assign to officer's org
+                organization_id: _officerOrgId, // automatically assign to officer's org
+                expected_attendance: capacity ? parseInt(capacity) : null
             };
 
             const submitBtn = document.getElementById('saveOfficerEventBtn');
@@ -687,6 +752,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     closeModal(officerEventModal);
                     officerEventForm.reset();
                     loadManageEvents(); // Refresh the grid
+                    
+                    // Show Success Modal
+                    const successModal = document.getElementById('successModal');
+                    const successTitle = document.getElementById('successModalTitle');
+                    const successMsg = document.getElementById('successModalMessage');
+                    if (successModal) {
+                        successTitle.textContent = eventId ? 'Event Updated' : 'Event Created';
+                        successMsg.textContent = eventId ? 
+                            'The event details have been successfully updated.' : 
+                            'Your new event has been submitted and is awaiting approval.';
+                        openModal(successModal);
+                    }
                 } else {
                     alert(`Error: ${response.error || 'Could not save event'}`);
                 }

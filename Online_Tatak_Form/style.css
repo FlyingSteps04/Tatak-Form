@@ -2939,6 +2939,13 @@ h2.title-built span {
     white-space: nowrap;
 }
 
+/* Allow status column to show full text without ellipsis */
+.data-table td:nth-child(5) {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: nowrap;
+}
+
 /* Left Aligned Columns (First two for both) */
 .data-table th:nth-child(1), .data-table td:nth-child(1),
 .data-table th:nth-child(2), .data-table td:nth-child(2) {
@@ -3259,6 +3266,7 @@ h2.title-built span {
 .status.upcoming { background: #fff7ed; color: #f97316; }
 .status.ongoing { background: #f0fdf4; color: #16a34a; }
 .status.done { background: #f1f5f9; color: #64748b; }
+.status.pending { background: #fef3c7; color: #92400e; white-space: nowrap; text-align: center; display: inline-block; }
 
 .action-icons {
     display: flex;
