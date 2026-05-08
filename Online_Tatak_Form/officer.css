@@ -294,10 +294,17 @@ body {
 .btn-outline { border: 1px solid #ddd; background: white; }
 .btn-primary { background: #1E3A8A; color: white; border: none; }
 
-/* Status Badges */
-.badge-upcoming { background: #E0F2FE; color: #0284C7; }
-.badge-closed { background: #F3F4F6; color: #4B5563; }
-.badge-open { background: #DCFCE7; color: #16A34A; }
+.badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+.badge-upcoming { background: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD; }
+.badge-closed { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
+.badge-open { background: #DCFCE7; color: #16A34A; border: 1px solid #BBF7D0; }
+.badge-pending { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 /* Stats Grid Layout */
 .stats-grid {
     display: grid;

@@ -26,10 +26,10 @@ export async function addEvent(org_id, name, location, latitude, longitude, star
     
     return result;
 }
-export const updateEvent = async (eventID, name, location, latitude, longitude, start_date, end_date, created_by, expected_attendance) => {
+export const updateEvent = async (eventID, name, location, latitude, longitude, start_date, end_date, created_by, expected_attendance, organization_id) => {
     const query = `UPDATE events SET name = ?, location = ?, latitude = ?, longitude = ?, 
-                    start_date = ?, end_date = ?, created_by = ?, expected_attendance = ? WHERE event_id = ?`
-    const [result] = await pool.query(query, [name, location, latitude, longitude, start_date, end_date, created_by, expected_attendance, eventID])
+                    start_date = ?, end_date = ?, created_by = ?, expected_attendance = ?, organization_id = ? WHERE event_id = ?`
+    const [result] = await pool.query(query, [name, location, latitude, longitude, start_date, end_date, created_by, expected_attendance, organization_id, eventID])
     return result
 }
 

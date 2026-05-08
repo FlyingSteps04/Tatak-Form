@@ -1,6 +1,6 @@
 import express from 'express'
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js'
-import { getAllAttendanceByEventID, getAllAttendanceByUserID, getAttendanceByID, getAttendanceSummary, getAttendanceSummaryByOrg, markAttendance, updateAttendance, overrideAttendance, getEventByToken, checkExistingAttendance } from '../Database/attendance.js'
+import { getAllAttendanceByEventID, getAllAttendanceByUserID, getAttendanceByID, getAttendanceSummary, getAttendanceSummaryByOrg, markAttendance, updateAttendance, overrideAttendance, getEventByToken, checkExistingAttendance, getAllAttendance } from '../Database/attendance.js'
 import { validateAttendance } from '../Middleware/validateAttendance.js'
 import { addNotification } from '../Database/notifications.js'
 import { getEventByID } from '../Database/events.js'
@@ -8,6 +8,15 @@ import { addLog } from '../Database/auditLogs.js'
 import { getUserByID, updateUser } from '../Database/users.js'
 
 const router = express.Router()
+
+router.get('/all', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
+    try {
+        const rows = await getAllAttendance()
+        res.json({ success: true, data: rows })
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
 
 router.post('/admin-override', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     const { user_id, event_id, status } = req.body;

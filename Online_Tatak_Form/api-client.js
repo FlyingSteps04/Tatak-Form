@@ -14,6 +14,9 @@ function getAuthToken() {
 function clearAuthAndRedirect() {
     localStorage.removeItem('tatak_token');
     localStorage.removeItem('tatak_role');
+    localStorage.removeItem('admin_last_section');
+    localStorage.removeItem('officer_last_section');
+    setPendingToast('You have been signed out.', 'info');
     // replace() avoids leaving a broken protected page in browser history.
     window.location.replace('login.html');
 }
@@ -74,12 +77,32 @@ function checkPendingToast() {
     if (pending) {
         const { message, type } = JSON.parse(pending);
         sessionStorage.removeItem('tatak_pending_toast');
-        // Small delay to ensure DOM is ready
-        setTimeout(() => showToast(message, type), 100);
+        // Slightly longer delay to ensure dashboard scripts have finished initial rendering
+        setTimeout(() => showToast(message, type), 500);
     }
 }
 
 function showToast(message, type = 'info') {
+    // Inject styles if missing
+    if (!document.getElementById('tatak-toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'tatak-toast-styles';
+        style.innerHTML = `
+            .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+            .toast { background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 12px; min-width: 280px; border-left: 4px solid #3b82f6; animation: toastSlideIn 0.3s ease forwards; font-family: 'Inter', sans-serif; font-size: 14px; }
+            .toast.success { border-left-color: #10b981; }
+            .toast.error { border-left-color: #ef4444; }
+            .toast.info { border-left-color: #3b82f6; }
+            .toast.hiding { animation: toastSlideOut 0.3s ease forwards; }
+            .toast-icon { font-size: 18px; }
+            .toast.success .toast-icon { color: #10b981; }
+            .toast.error .toast-icon { color: #ef4444; }
+            @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    }
+
     let container = document.querySelector('.toast-container');
     if (!container) {
         container = document.createElement('div');

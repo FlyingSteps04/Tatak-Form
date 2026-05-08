@@ -85,11 +85,15 @@ router.put('/:id', authenticateToken, authenticateRole("Admin"), async (req, res
             return res.status(400).json({ success: false, error: "Officer record not found or no changes made" })
         }
 
-        // 2. If fname is provided, update the associated user's name
-        if (fname) {
-            const officerData = await getOrganizationOfficerByID(id)
-            if (officerData && officerData.user_id) {
-                await updateUser(officerData.user_id, { fname })
+        // 2. Sync changes with the associated user record (fname and organization_id)
+        const officerData = await getOrganizationOfficerByID(id)
+        if (officerData && officerData.user_id) {
+            const updatePayload = {}
+            if (fname) updatePayload.fname = fname
+            if (finalOrgId) updatePayload.organization_id = finalOrgId
+            
+            if (Object.keys(updatePayload).length > 0) {
+                await updateUser(officerData.user_id, updatePayload)
             }
         }
 

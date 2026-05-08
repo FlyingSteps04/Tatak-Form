@@ -107,45 +107,43 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
 // UPDATE EVENT
 router.put('/:id', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     const { id } = req.params;
-    const { name, location, start_date, end_date, expected_attendance } = req.body;
-    let { latitude, longitude } = req.body; // Allow manual override if needed
+        const { name, location, start_date, end_date, expected_attendance, organization_id } = req.body;
+        let { latitude, longitude } = req.body;
 
-    if (!name || !location || !start_date) {
-        return res.status(400).json({ error: "Name, location, and start date are required" });
-    }
+        if (!name || !location || !start_date) {
+            return res.status(400).json({ error: "Name, location, and start date are required" });
+        }
 
-    try {
-        const existingEvent = await getEventByID(id);
-        if (!existingEvent) return res.status(404).json({ error: "Event not found" });
+        try {
+            const existingEvent = await getEventByID(id);
+            if (!existingEvent) return res.status(404).json({ error: "Event not found" });
 
-        // Update coordinates only if location changed
-        if (existingEvent.location !== location) {
-            try {
-                const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
-                    params: { q: location, format: "json", limit: 1 },
-                    headers: { "User-Agent": "TatakAttendance/1.0" }
-                });
-                if (geoRes.data?.length > 0) {
-                    latitude = parseFloat(geoRes.data[0].lat);
-                    longitude = parseFloat(geoRes.data[0].lon);
-                } else {
-                    // Fallback to 0,0 instead of failing completely
+            // Update coordinates only if location changed
+            if (existingEvent.location !== location) {
+                try {
+                    const geoRes = await axios.get("https://nominatim.openstreetmap.org/search", {
+                        params: { q: location, format: "json", limit: 1 },
+                        headers: { "User-Agent": "TatakAttendance/1.0" }
+                    });
+                    if (geoRes.data?.length > 0) {
+                        latitude = parseFloat(geoRes.data[0].lat);
+                        longitude = parseFloat(geoRes.data[0].lon);
+                    } else {
+                        latitude = 0;
+                        longitude = 0;
+                    }
+                } catch (geoErr) {
+                    console.warn("Geocoding failed during update, using 0,0:", geoErr.message);
                     latitude = 0;
                     longitude = 0;
                 }
-            } catch (geoErr) {
-                console.warn("Geocoding failed during update, using 0,0:", geoErr.message);
-                latitude = 0;
-                longitude = 0;
+            } else {
+                latitude = existingEvent.latitude;
+                longitude = existingEvent.longitude;
             }
-        } else {
-            latitude = existingEvent.latitude;
-            longitude = existingEvent.longitude;
-        }
 
-        const result = await updateEvent(id, name, location, latitude, longitude, start_date, end_date, req.user.id, expected_attendance);
-
-        if (!result.affectedRows) return res.status(404).json({ error: "Update failed" });
+            const result = await updateEvent(id, name, location, latitude, longitude, start_date, end_date, req.user.id, expected_attendance, organization_id);
+            if (!result.affectedRows) return res.status(404).json({ error: "Update failed" });
 
         await addLog(req.user.id, "Update Event", "events", id);
         const updated = await getEventByID(id);

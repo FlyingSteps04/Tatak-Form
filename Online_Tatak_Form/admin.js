@@ -14,6 +14,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Populate Organization Dropdowns early
+    async function loadAllOrgsForSelects() {
+        try {
+            const res = await window.TatakApi.apiRequest('/organizations');
+            const orgs = res.data || [];
+            const html = '<option value="" disabled selected>Select Organization</option>' + 
+                         orgs.map(o => `<option value="${o.organization_id}">${o.name}</option>`).join('');
+            
+            ['addEventOrg', 'editEventOrg', 'offOrg', 'editOffOrg'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = html;
+            });
+        } catch (err) {
+            console.error('Error loading organizations for selects:', err);
+        }
+    }
+    loadAllOrgsForSelects();
+
     // --- GLOBAL MODAL HELPERS ---
     window.openModal = function(id) {
         console.log('Opening modal:', id);
@@ -68,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (studentIdInput) studentIdInput.value = id;
         if (studentNameText) studentNameText.innerText = `Overriding attendance for: ${name}`;
         
-        // Populate events in the override modal
         try {
             const res = await window.TatakApi.apiRequest('/events');
             const events = res.data || [];
@@ -94,10 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/auth/users/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteStudentModal');
+                        window.TatakApi.showToast('Student deleted successfully', 'success');
                         loadAdminStudentsTable();
                     }
                 } catch (err) {
                     console.error('Error deleting student:', err);
+                    window.TatakApi.showToast('Error deleting student: ' + err.message, 'error');
                 } finally {
                     confirmBtn.innerText = 'Yes, Delete';
                     confirmBtn.disabled = false;
@@ -107,56 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openModal('deleteStudentModal');
     };
 
-
-    window.openEditEventModal = (id, name, date, venue, start, end) => {
+    window.openEditEventModal = (id, name, date, venue, start, end, expected, orgId) => {
         document.getElementById('editEventId').value = id;
+        document.getElementById('editEventOrg').value = orgId || '';
         document.getElementById('editEventName').value = name;
         document.getElementById('editEventDate').value = date;
         document.getElementById('editEventVenue').value = venue;
         document.getElementById('editEventStartTime').value = start;
         document.getElementById('editEventEndTime').value = end;
+        document.getElementById('editEventCapacity').value = expected || '';
         window.openModal('editEventModal');
-    };
-
-    window.openDeleteEventModal = (id, isPending = false) => {
-        const titleEl = document.getElementById('deleteEventModalTitle');
-        const textEl = document.getElementById('deleteEventModalText');
-        
-        if (titleEl && textEl) {
-            if (isPending) {
-                titleEl.innerText = 'Reject Event?';
-                textEl.innerHTML = 'Are you sure? This action will <br><strong>permanently delete</strong> this pending event request.';
-            } else {
-                titleEl.innerText = 'Delete Event?';
-                textEl.innerHTML = 'Are you sure? This action will remove <br><strong>all attendance records</strong> for this event.';
-            }
-        }
-
-        const confirmBtn = document.getElementById('confirmDeleteEventBtn');
-        if (confirmBtn) {
-            confirmBtn.onclick = async () => {
-                confirmBtn.innerText = isPending ? 'Rejecting...' : 'Deleting...';
-                confirmBtn.disabled = true;
-                try {
-                    const res = await window.TatakApi.apiRequest(`/events/${id}`, { method: 'DELETE' });
-                    if (res && res.success) {
-                        window.closeModal('deleteEventModal');
-                        window.TatakApi.showToast(isPending ? 'Event rejected and deleted.' : 'Event deleted successfully.', 'success');
-                        loadAdminEventsTable();
-                        loadAdminOverviewMetrics();
-                    } else {
-                        window.TatakApi.showToast(res.error || 'Failed to delete event.', 'error');
-                    }
-                } catch (err) {
-                    console.error('Error deleting event:', err);
-                    window.TatakApi.showToast('Failed to delete event.', 'error');
-                } finally {
-                    confirmBtn.innerText = isPending ? 'Yes, Reject' : 'Yes, Delete';
-                    confirmBtn.disabled = false;
-                }
-            };
-        }
-        window.openModal('deleteEventModal');
     };
 
     window.openApproveEventModal = (id) => {
@@ -185,6 +164,47 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
         window.openModal('approveEventModal');
+    };
+
+    window.openDeleteEventModal = (id, isPending = false) => {
+        const titleEl = document.getElementById('deleteEventModalTitle');
+        const textEl = document.getElementById('deleteEventModalText');
+        const confirmBtn = document.getElementById('confirmDeleteEventBtn');
+        
+        if (titleEl && textEl) {
+            if (isPending) {
+                titleEl.innerText = 'Reject Event?';
+                textEl.innerHTML = 'Are you sure? This action will <br><strong>permanently delete</strong> this pending event request.';
+            } else {
+                titleEl.innerText = 'Delete Event?';
+                textEl.innerHTML = 'Are you sure? This action will remove <br><strong>all attendance records</strong> for this event.';
+            }
+        }
+
+        if (confirmBtn) {
+            confirmBtn.onclick = async () => {
+                confirmBtn.innerText = isPending ? 'Rejecting...' : 'Deleting...';
+                confirmBtn.disabled = true;
+                try {
+                    const res = await window.TatakApi.apiRequest(`/events/${id}`, { method: 'DELETE' });
+                    if (res && res.success) {
+                        window.closeModal('deleteEventModal');
+                        window.TatakApi.showToast(isPending ? 'Event rejected.' : 'Event deleted successfully.', 'success');
+                        loadAdminEventsTable();
+                        loadAdminOverviewMetrics();
+                    } else {
+                        window.TatakApi.showToast(res.error || 'Failed to delete event.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error deleting event:', err);
+                    window.TatakApi.showToast('Failed to delete event.', 'error');
+                } finally {
+                    confirmBtn.innerText = isPending ? 'Yes, Reject' : 'Yes, Delete';
+                    confirmBtn.disabled = false;
+                }
+            };
+        }
+        window.openModal('deleteEventModal');
     };
 
     window.openEditOfficerModal = (id, name, orgId, role, status) => {
@@ -338,9 +358,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="content-grid">
                 <div class="chart-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <h3 style="margin: 0;">Monthly Attendance Rate</h3>
-                        <select id="admin-chart-month-filter" style="font-size: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; color: #475569; outline: none; background: #f8fafc; cursor: pointer; font-weight: 600;"></select>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="admin-chart-org-filter" style="font-size: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; color: #475569; outline: none; background: #f8fafc; cursor: pointer; font-weight: 600; min-width: 150px;">
+                                <option value="all">All Organizations</option>
+                            </select>
+                            <select id="admin-chart-month-filter" style="font-size: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; color: #475569; outline: none; background: #f8fafc; cursor: pointer; font-weight: 600;"></select>
+                        </div>
                     </div>
                     <div class="chart-placeholder" id="admin-monthly-chart" style="display: flex; align-items: center; justify-content: center; min-height: 200px; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
                         <p style="color: #64748b;">Loading chart data...</p>
@@ -536,21 +561,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="stat-card">
                         <div class="stat-icon icon-blue-light" style="background: #eff6ff; color: #3b82f6;"><i class="fas fa-graduation-cap"></i></div>
                         <div class="stat-data">
-                            <span class="value" id="admin-students-total">1,248</span>
+                            <span class="value" id="admin-students-total">...</span>
                             <p class="label">Total Students</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon icon-green-light" style="background: #f0fdf4; color: #22c55e;"><i class="fas fa-check-circle"></i></div>
                         <div class="stat-data">
-                            <span class="value" id="admin-students-enrolled">15,234</span>
+                            <span class="value" id="admin-students-enrolled">...</span>
                             <p class="label">Enrolled</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon icon-yellow-light" style="background: #fffbeb; color: #f59e0b;"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-data">
-                            <span class="value" id="admin-students-attendance">92%</span>
+                            <span class="value" id="admin-students-attendance">...</span>
                             <p class="label">Avg Attendance</p>
                         </div>
                     </div>
@@ -558,7 +583,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <div class="white-container full-width">
                     <div class="container-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                        <h3>Student Directory</h3>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <h3>Student Directory</h3>
+                            <div class="search-box" style="padding: 0 15px; border-radius: 10px; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); height: 40px;">
+                                <i class="fas fa-search" style="color: #94a3b8; margin-right: 8px; font-size: 0.9rem;"></i>
+                                <input type="text" id="student-search-input" placeholder="Search name or ID..." style="border: none; outline: none; background: transparent; padding: 10px 0; font-family: inherit; font-size: 0.9rem; color: #475569; width: 200px;">
+                            </div>
+                        </div>
                         <div style="display: flex; gap: 12px;">
                             <div class="search-box" style="padding: 0 15px; border-radius: 10px; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                                 <i class="fas fa-university" style="color: #94a3b8; margin-right: 8px; font-size: 0.9rem;"></i>
@@ -628,18 +659,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.getElementById('admin-active-officers')) document.getElementById('admin-active-officers').innerText = officers.length;
             if(document.getElementById('admin-active-orgs')) document.getElementById('admin-active-orgs').innerText = organizations.length;
             
-            const attendanceRate = summary.total > 0 ? Math.round((summary.present_count / summary.total) * 100) : 0;
+            
+            const totalExpected = events.reduce((sum, e) => sum + (e.expected_attendance || 0), 0);
+            const totalPresent = (summary.present_count || 0) + (summary.late_count || 0);
+            const attendanceRate = totalExpected > 0 ? Math.round((totalPresent / totalExpected) * 100) : 0;
             if(document.getElementById('admin-avg-attendance')) document.getElementById('admin-avg-attendance').innerText = `${attendanceRate}%`;
 
             const chartPlaceholder = document.getElementById('admin-monthly-chart');
             const monthFilter = document.getElementById('admin-chart-month-filter');
-            if (chartPlaceholder && monthFilter) {
-                // Fetch all attendance once
-                let allAtt = [];
-                try {
-                    const allAttRes = await window.TatakApi.apiRequest('/attendance/all');
-                    allAtt = allAttRes.data || [];
-                } catch(e) { /* fallback to empty */ }
+            const orgFilter = document.getElementById('admin-chart-org-filter');
+
+            if (chartPlaceholder && monthFilter && orgFilter) {
+                // Populate Org Filter
+                const currentOrgVal = orgFilter.value;
+                orgFilter.innerHTML = '<option value="all">All Organizations</option>' + 
+                    organizations.map(o => `<option value="${o.organization_id}">${o.name}</option>`).join('');
+                if (currentOrgVal) orgFilter.value = currentOrgVal;
 
                 // Collect unique months that have events
                 const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -670,20 +705,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Track chart instance for cleanup
                 let chartInstance = null;
 
-                function renderChartForMonth(yearMonthKey) {
+                async function renderChartForMonth(yearMonthKey, orgId = 'all') {
+                    const chartPlaceholder = document.getElementById('admin-monthly-chart');
+                    if (!chartPlaceholder) return;
+                    
+                    chartPlaceholder.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3b82f6; margin-bottom: 10px;"></i>
+                            <p style="color: #64748b; font-size: 13px;">Analyzing attendance data...</p>
+                        </div>
+                    `;
+                    
                     const entry = monthSet.get(yearMonthKey);
                     const filterYear = entry ? entry.year : now.getFullYear();
                     const filterMonth = entry ? entry.month : now.getMonth();
 
+                    // Fetch attendance data
+                    let allAtt = [];
+                    try {
+                        const allAttRes = await window.TatakApi.apiRequest('/attendance/all');
+                        allAtt = allAttRes.data || [];
+                    } catch(e) { 
+                        console.error('Chart data fetch error:', e); 
+                        chartPlaceholder.innerHTML = '<p style="color: #ef4444; padding: 20px;">Failed to load attendance data.</p>';
+                        return;
+                    }
+
                     const filtered = events.filter(e => {
                         const d = new Date(e.start_date);
-                        return d.getMonth() === filterMonth && d.getFullYear() === filterYear;
+                        const matchesMonth = d.getMonth() === filterMonth && d.getFullYear() === filterYear;
+                        const matchesOrg = orgId === 'all' || String(e.organization_id) === String(orgId);
+                        return matchesMonth && matchesOrg;
                     });
 
                     // Destroy old chart
                     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
                     chartPlaceholder.innerHTML = '<canvas id="monthlyAttendanceChart"></canvas>';
+                    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
                     chartPlaceholder.style.cssText = 'display:block; padding:15px; height:300px; background:#f8fafc; border-radius:12px; border:none;';
 
                     if (filtered.length === 0) {
@@ -701,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     const expectedPoints = filtered.map(e => e.expected_attendance || 0);
 
-                    const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
+                    // ctx is already declared above
                     chartInstance = new Chart(ctx, {
                         type: 'bar',
                         data: {
@@ -754,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                             const actual = dataPoints[idx];
                                             const expected = expectedPoints[idx];
                                             if (expected > 0) {
-                                                const pct = Math.min(100, Math.round((actual / expected) * 100));
+                                                const pct = Math.round((actual / expected) * 100);
                                                 return [`Achievement: ${pct}%`];
                                             }
                                             return [];
@@ -775,10 +834,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Initial render
-                renderChartForMonth(monthFilter.value);
+                renderChartForMonth(monthFilter.value, orgFilter.value);
 
                 // Re-render on change
-                monthFilter.addEventListener('change', () => renderChartForMonth(monthFilter.value));
+                monthFilter.addEventListener('change', () => renderChartForMonth(monthFilter.value, orgFilter.value));
+                orgFilter.addEventListener('change', () => renderChartForMonth(monthFilter.value, orgFilter.value));
             }
 
             const upcomingList = document.getElementById('admin-upcoming-events-list');
@@ -858,7 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     } else {
                         actionHtml = `
-                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${event.start_date.split('T')[0]}', '${(event.location || '').replace(/'/g, "\\'")}', '${new Date(event.start_date).toTimeString().slice(0,5)}', '${event.end_date ? new Date(event.end_date).toTimeString().slice(0,5) : ''}')" title="Edit Event"><i class="far fa-edit"></i></button>
+                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${event.start_date.split('T')[0]}', '${(event.location || '').replace(/'/g, "\\'")}', '${new Date(event.start_date).toTimeString().slice(0,5)}', '${event.end_date ? new Date(event.end_date).toTimeString().slice(0,5) : ''}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
                             <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
                         `;
                     }
@@ -935,9 +995,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const color = colors[i % colors.length];
                     const orgEvents = events.filter(e => String(e.organization_id) === String(org.organization_id));
                     const orgStudents = students.filter(s => String(s.organization_id) === String(org.organization_id));
+                    const orgOfficers = (usersRes.data || []).filter(u => u.role === 'Officer' && String(u.organization_id) === String(org.organization_id));
+                    const totalMembers = orgStudents.length + orgOfficers.length;
 
                     const statusText = org.is_active === 1 ? 'Active' : 'Inactive';
-                    const statusClass = org.is_active === 1 ? 'Active' : 'Inactive'; // CSS relies on .Active and .Inactive
+                    const statusClass = org.is_active === 1 ? 'Active' : 'Inactive';
 
                     return `
                         <div class="org-mini-card">
@@ -955,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="mini-card-footer">
                                 <div class="mini-stat-group">
                                     <div class="mini-stat">
-                                        <strong>${orgStudents.length}</strong>
+                                        <strong>${totalMembers}</strong>
                                         <span>MEMBERS</span>
                                     </div>
                                     <div class="mini-stat">
@@ -1019,14 +1081,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     const fullName = off.fname || 'Unknown Officer';
                     const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
                     const orgName = off.name || 'N/A';
-                    const position = off.role || 'Officer';
+                    const position = off.position || 'Officer';
+                    const posLower = position.toLowerCase();
+                    let posClass = 'badge-pill-yellow';
+                    if (posLower.includes('president') && !posLower.includes('vice')) posClass = 'badge-pill-purple';
+                    else if (posLower.includes('vice')) posClass = 'badge-pill-blue';
+                    else if (posLower.includes('secretary')) posClass = 'badge-pill-green';
+                    else if (posLower.includes('treasurer')) posClass = 'badge-pill-amber';
 
-                    // If the officer's own status is Inactive OR their org is inactive, show Inactive
-                    const effectiveStatus = (off.status === 'Inactive' || off.org_is_active === 0) ? 'Inactive' : 'Active';
-                    const statusColor = effectiveStatus === 'Inactive' ? '#ef4444' : '#10b981';
-                    const statusLabel = effectiveStatus === 'Inactive'
-                        ? (off.org_is_active === 0 ? '● Inactive (Org)' : '● Inactive')
-                        : '● Active';
+                    const isOrgInactive = orgs.find(o => String(o.organization_id) === String(off.organization_id))?.is_active === 0;
+
+                    let statusColor = '#10b981', statusLabel = '● Active';
+                    if (off.status === 'Inactive') {
+                        statusColor = '#ef4444';
+                        statusLabel = '● Inactive';
+                    } else if (isOrgInactive) {
+                        statusColor = '#f59e0b';
+                        statusLabel = '● Org Inactive';
+                    }
                     
                     return `
                         <tr>
@@ -1039,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center"><span class="badge-pill-yellow">${position}</span></td>
+                            <td class="text-center"><span class="${posClass}">${position}</span></td>
                             <td class="text-center"><span class="badge-org-blue">${orgName}</span></td>
                             <td class="text-center" style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
                             <td class="text-center"><span class="status-indicator-dot" style="color: ${statusColor};">${statusLabel}</span></td>
@@ -1107,6 +1179,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventFilter.addEventListener('change', () => {
                     renderStudentsTableBody();
                 });
+
+                const searchInput = document.getElementById('student-search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => {
+                        renderStudentsTableBody();
+                    });
+                }
             }
 
             renderStudentsTableBody();
@@ -1124,9 +1203,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let filteredStudents = studentDataCache.students;
         const orgId = orgFilter ? orgFilter.value : 'all';
         const eventId = eventFilter ? eventFilter.value : 'all';
+        const searchInput = document.getElementById('student-search-input');
+        const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
         
         if (orgId !== 'all') {
             filteredStudents = filteredStudents.filter(s => String(s.organization_id) === String(orgId));
+        }
+
+        if (searchQuery) {
+            filteredStudents = filteredStudents.filter(s => 
+                (s.fname || '').toLowerCase().includes(searchQuery) || 
+                (s.id || '').toString().includes(searchQuery) ||
+                (s.stud_id_number || '').toLowerCase().includes(searchQuery)
+            );
         }
         
         if (filteredStudents.length === 0) {
@@ -1204,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await window.TatakApi.apiRequest('/organizations');
             const orgs = res.data || [];
-            const selects = ['offOrg', 'editOffOrg', 'addEventOrg'];
+            const selects = ['offOrg', 'editOffOrg', 'addEventOrg', 'editEventOrg'];
             const options = orgs.map(org => `<option value="${org.organization_id}">${org.name}</option>`).join('');
             selects.forEach(id => {
                 const el = document.getElementById(id);
@@ -1219,9 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmLogout = document.getElementById('confirmLogout');
     if (confirmLogout) {
         confirmLogout.onclick = () => {
-            localStorage.removeItem('tatak_token');
-            localStorage.removeItem('tatak_role');
-            window.location.href = 'login.html';
+            window.TatakApi.clearAuthAndRedirect();
         };
     }
 
@@ -1281,7 +1368,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const res = await window.TatakApi.apiRequest(`/organizations/${oldId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ organization_id: newId, name, description: desc, is_active: status === 'Active' })
+                    body: JSON.stringify({ 
+                        organization_id: newId, 
+                        name, 
+                        description: desc, 
+                        is_active: status === 'Active' ? 1 : 0 
+                    })
                 });
                 if (res && res.success) {
                     window.closeModal('editOrgModal');
@@ -1353,7 +1445,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         name: document.getElementById('editEventName').value,
                         start_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventStartTime').value,
                         end_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventEndTime').value,
-                        location: document.getElementById('editEventVenue').value
+                        location: document.getElementById('editEventVenue').value,
+                        expected_attendance: document.getElementById('editEventCapacity').value || null,
+                        organization_id: document.getElementById('editEventOrg').value
                     })
                 });
                 if (res && res.success) {

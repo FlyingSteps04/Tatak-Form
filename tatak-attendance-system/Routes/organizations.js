@@ -40,10 +40,10 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin"), async (req, 
 
 router.put('/:id', authenticateToken, authenticateRole("Admin"), async (req, res) => {
     const { id } = req.params
-    const { name, description } = req.body
+    const { name, description, is_active } = req.body
     if(!name) return res.status(400).json({error: "Organization name is required"})
     
-    const result = await updateOrganization(id, name, description)
+    const result = await updateOrganization(id, name, description, is_active)
     
     if(!result.affectedRows) return res.status(400).json({error: "Unable to update"})
     

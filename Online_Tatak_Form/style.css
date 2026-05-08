@@ -1808,16 +1808,19 @@ input[type="password"]::-webkit-reveal-button {
 }
 
 /* Status Pill Badges */
-.status {
+.status, .badge {
     padding: 5px 12px;
     border-radius: 10px;
     font-size: 0.7rem;
     font-weight: 700;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.status.upcoming { background: #E0F2FE; color: #0369A1; }
-.status.ongoing { background: #DCFCE7; color: #15803D; }
-.status.done { background: #F1F5F9; color: #64748B; }
+.status.upcoming, .badge-upcoming { background: #E0F2FE !important; color: #0369A1 !important; }
+.status.ongoing, .badge-open { background: #DCFCE7 !important; color: #15803D !important; }
+.status.done, .badge-closed { background: #F1F5F9 !important; color: #64748B !important; }
+.status.pending, .badge-pending { background: #FEF3C7 !important; color: #92400E !important; }
 
 /* Layout for Organization Grid */
 .org-main-grid {

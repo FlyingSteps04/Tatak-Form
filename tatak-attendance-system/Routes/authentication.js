@@ -10,6 +10,7 @@ import { saveResetToken, getResetToken, deleteResetToken } from '../Database/res
 import { addNotification } from '../Database/notifications.js'
 import dotenv from 'dotenv'
 dotenv.config()
+import { pool } from '../Database/connection.js'
 
 const router = express.Router()
 
@@ -28,15 +29,49 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { identifier, password } = req.body
-    const user = await getUserByIdentifier(identifier)
     
-    if(!user) return res.status(404).json({message:"No user Found!"})
+    try {
+        // Fetch user with organization and officer status
+        const [rows] = await pool.query(
+            `SELECT u.*, o.is_active as org_is_active, o.name as org_name, oo.status as officer_status
+             FROM users u
+             LEFT JOIN organizations o ON u.organization_id = o.organization_id
+             LEFT JOIN organization_officer oo ON u.id = oo.user_id
+             WHERE u.stud_id_number = ? OR u.email = ? OR u.username = ?`,
+            [identifier, identifier, identifier]
+        )
+        
+        const user = rows[0]
+        
+        if(!user) return res.status(404).json({message:"No user Found!"})
 
-    const isMatch = await bcrypt.compare(password, user.password)
-    if(!isMatch) return res.status(403).json({message: "Incorrect Password!"})
+        const isMatch = await bcrypt.compare(password, user.password)
+        if(!isMatch) return res.status(403).json({message: "Incorrect Password!"})
 
-    const token = jwt.sign({id: user.id, role: user.role}, process.env.SECRET_KEY, {expiresIn: '1h'})
-    res.json({token, role: user.role})
+        // Check if organization is inactive (for Student and Officer roles)
+        if (user.role !== 'Admin' && user.organization_id) {
+            if (user.org_is_active === 0) {
+                return res.status(403).json({ 
+                    message: `Login failed: The organization "${user.org_name || 'N/A'}" is currently inactive. Please contact your administrator.` 
+                });
+            }
+        }
+
+        // Check if officer account is inactive
+        if (user.role === 'Officer') {
+            if (user.officer_status === 'Inactive') {
+                return res.status(403).json({ 
+                    message: "Login failed: Your officer account is currently inactive. Please contact your administrator." 
+                });
+            }
+        }
+
+        const token = jwt.sign({id: user.id, role: user.role}, process.env.SECRET_KEY, {expiresIn: '1h'})
+        res.json({token, role: user.role})
+    } catch (err) {
+        console.error('Login error:', err)
+        res.status(500).json({ message: "Server error during login" })
+    }
 })
 
 router.post('/logout', authenticateToken, async (req, res) => {

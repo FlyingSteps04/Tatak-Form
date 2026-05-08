@@ -101,3 +101,9 @@ export const checkExistingAttendance = async (userId, eventId) => {
     const [rows] = await pool.query(query, [userId, eventId])
     return rows[0]
 }
+
+export const getAllAttendance = async () => {
+    const query = `SELECT * FROM attendance`
+    const [rows] = await pool.query(query)
+    return rows
+}

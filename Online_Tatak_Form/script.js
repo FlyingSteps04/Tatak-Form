@@ -54,10 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Sends the login request to the backend and, if successful,
-     * stores the JWT token and redirects the user based on their role.
-     */
     async function handleLogin(identifier, password) {
         try {
             const response = await fetch(`${window.TatakApi.API_BASE_URL}/auth/login`, {
@@ -72,18 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                // Apply subtle error styling
                 const form = document.getElementById('loginForm');
                 if (form) {
                     form.classList.add('shake');
                     setTimeout(() => form.classList.remove('shake'), 400);
                 }
-
                 document.querySelectorAll('.input-field').forEach(field => {
                     field.classList.add('error-state');
                 });
-
-                // Always show the same deceptive message for security
                 window.TatakApi.showToast('Incorrect Username or Password!', 'error');
                 return;
             }
@@ -93,6 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save token and role
             localStorage.setItem('tatak_token', data.token);
             localStorage.setItem('tatak_role', data.role);
+
+            // Set pending toast for dashboard
+            window.TatakApi.setPendingToast(`Login Successful! Welcome, ${data.role}.`, 'success');
 
             // Redirect user based on role
             if (data.role === 'Admin') {
@@ -116,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const enteredUser = usernameInput.value;
             const enteredPass = passwordInput.value;
             handleLogin(enteredUser, enteredPass);
-        });
+        }); 
     }
 
     // Clear error state when typing

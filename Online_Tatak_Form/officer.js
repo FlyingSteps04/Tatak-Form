@@ -351,6 +351,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${isLive ? '<button class="btn-close-live"><i class="fas fa-times"></i> Close</button>' : ''}
                     </div>
                 `;
+
+                // Fetch actual counts for the hero card to make it dynamic
+                try {
+                    const eventId = targetLiveEvent.event_id || targetLiveEvent.id;
+                    const attRes = await window.TatakApi.apiRequest(`/attendance/personnel/${eventId}`);
+                    const attList = Array.isArray(attRes.data) ? attRes.data : [];
+                    const presentCount = attList.filter(a => a.status === 'Present' || a.status === 'Late').length;
+                    const expected = targetLiveEvent.expected_attendance || 0;
+                    const percent = expected > 0 ? Math.round((presentCount / expected) * 100) : 0;
+                    
+                    const countEl = heroCard.querySelector('.current-count');
+                    const totalEl = heroCard.querySelector('.total-count');
+                    const fillEl = heroCard.querySelector('.hero-progress-fill');
+                    const metaEl = heroCard.querySelector('.hero-progress-meta');
+                    
+                    if (countEl) countEl.innerText = presentCount;
+                    if (totalEl) totalEl.innerText = expected > 0 ? `/${expected}` : '/--';
+                    if (fillEl) fillEl.style.width = `${percent}%`;
+                    if (metaEl) metaEl.innerText = expected > 0 ? `${percent}% of expected attendance reached` : 'Expected attendance not set';
+                } catch (e) {
+                    const metaEl = heroCard.querySelector('.hero-progress-meta');
+                    if (metaEl) metaEl.innerText = 'Attendance data unavailable';
+                }
             } else if (heroCard) {
                 heroCard.style.display = 'none';
             }
@@ -369,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const end = ev.end_date ? new Date(ev.end_date) : new Date(s.getTime() + 4 * 60 * 60 * 1000);
                         
                         if (now >= s && now <= end) badgeHtml = '<span class="badge badge-open">Open</span>';
-                        else if (now < s) badgeHtml = '<span class="badge badge-upcoming" style="background: rgba(255, 165, 2, 0.2); color: #ffa502;">Upcoming</span>';
+                        else if (now < s) badgeHtml = '<span class="badge badge-upcoming">Upcoming</span>';
                         else badgeHtml = '<span class="badge badge-closed">Closed</span>';
                         
                         return `
@@ -560,6 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.openModal = (modalElement) => {
+        if (typeof modalElement === 'string') modalElement = document.getElementById(modalElement);
         if (modalElement) {
             modalElement.style.display = 'flex';
             document.body.style.overflow = 'hidden';
@@ -567,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.closeModal = (modalElement) => {
+        if (typeof modalElement === 'string') modalElement = document.getElementById(modalElement);
         if (modalElement) {
             modalElement.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -597,7 +622,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let badgeClass = 'badge-closed';
                 let badgeText = 'Closed';
-                if (now >= s && now <= end) { badgeClass = 'badge-open'; badgeText = 'Open'; }
+                if (ev.approval_status && ev.approval_status.toLowerCase() === 'pending') { 
+                    badgeClass = 'badge-pending'; 
+                    badgeText = 'Pending'; 
+                }
+                else if (now >= s && now <= end) { badgeClass = 'badge-open'; badgeText = 'Open'; }
                 else if (now < s) { badgeClass = 'badge-upcoming'; badgeText = 'Upcoming'; }
 
                 // Determine start and end times for form population
@@ -616,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">${ev.name}</h3>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                                <span class="badge ${badgeClass}" style="white-space: nowrap; ${badgeText==='Upcoming'?'background: rgba(255, 165, 2, 0.2); color: #ffa502;':''}">${badgeText}</span>
+                                <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
                                     <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
