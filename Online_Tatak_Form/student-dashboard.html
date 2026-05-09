@@ -13,10 +13,10 @@
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="University Logo" class="logo">
-                <div class="logo-text">
+                <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="University Logo" class="side-logo">
+                <div class="side-title">
                     <strong>STUDENT DASHBOARD</strong>
-                    <span>Student Portal</span>
+                    <span>STUDENT PORTAL</span>
                 </div>
             </div>
             
@@ -24,8 +24,7 @@
                 <p class="nav-label">NAVIGATION</p>
                 <ul>
                     <li class="nav-item active" id="nav-overview"><i class="fas fa-th-large"></i> Overview</li>
-                    <li class="nav-item" id="nav-active-events"><i class="fas fa-calendar-check"></i> Active Events</li>
-                    <li class="nav-item" id="nav-upcoming"><i class="fas fa-users"></i> Upcoming</li>
+                    <li class="nav-item" id="nav-events"><i class="fas fa-calendar-alt"></i> Events</li>
                     <li class="nav-item" id="nav-history"><i class="fas fa-clipboard-list"></i> History</li>
                     <li class="nav-item" id="nav-reports"><i class="fas fa-chart-bar"></i> Reports</li>
                     <li class="nav-item logout-item" id="sidebarLogout" role="button">
@@ -80,29 +79,21 @@
                         </div>
                     </section>
                     <section class="events-and-stats">
-                        <div class="event-card card">
-                            <div class="card-header">
-                                <h3>Cultural Night 2026</h3>
-                                <span class="badge open">Open Now</span>
-                            </div>
-                            <p class="event-time">Feb 28, 2026 - 6:00 PM - 11:00 PM</p>
-                            <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
-                            <div class="card-footer">
-                                <span class="expiry-text">Code expired soon</span>
-                                <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
-                            </div>
+                        <div id="overview-next-event" class="event-card card">
+                            <!-- Dynamic Content -->
+                            <div class="skeleton-loader" style="height: 150px; background: #f1f5f9; border-radius: 12px; animation: pulse 1.5s infinite;"></div>
                         </div>
 
                         <div class="stats-card card">
                             <div class="stats-header">
                                 <h3>Attendance Rate</h3>
-                                <span class="sub-label">This Semester</span>
+                                <span class="sub-label">Overall Stats</span>
                             </div>
-                            <div class="stats-content">
-                                <div class="circular-progress"><span class="percent">91%</span></div>
+                            <div class="stats-content" id="overview-stats">
+                                <div class="circular-progress"><span class="percent">--%</span></div>
                                 <div class="stat-boxes">
-                                    <div class="stat-box attended"><strong>10</strong><span>Attended</span></div>
-                                    <div class="stat-box missed"><strong>1</strong><span>Missed</span></div>
+                                    <div class="stat-box attended"><strong>--</strong><span>Attended</span></div>
+                                    <div class="stat-box missed"><strong>--</strong><span>Missed</span></div>
                                 </div>
                             </div>
                         </div>
@@ -110,11 +101,11 @@
                 </div>
             </div>
 
-            <div id="section-active-events" class="dashboard-section" style="display: none;">
+            <div id="section-events" class="dashboard-section" style="display: none;">
                 <header class="top-bar">
                     <div class="welcome-text">
-                        <h1>Active Events</h1>
-                        <p>Confirm your attendance</p>
+                        <h1>Events</h1>
+                        <p>Discover and participate in university events</p>
                     </div>
                     <div class="top-icons">
                         <div class="icon-circle"><i class="far fa-bell"></i></div>
@@ -127,88 +118,25 @@
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
 
-                <div class="active-events-grid">
-                    <div class="event-card card">
-                        <div class="card-header">
-                            <h3>Cultural Night 2026</h3>
-                            <div class="badge-container">
-                                <span class="badge open">Open Now</span>
-                                <span class="closes-hint">Closes in 1hr 24m</span>
-                            </div>
-                        </div>
-                        <p class="event-time">Feb 28, 2026 - 6:00 PM - 11:00 PM</p>
-                        <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
-                        <div class="card-footer">
-                            <span class="expiry-text">Code expired soon</span>
-                            <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
+                <div class="events-container">
+                    <div class="events-group">
+                        <h2 class="group-title">Happening Now</h2>
+                        <div id="active-events-grid" class="active-events-grid">
+                            <!-- Dynamic Active Events -->
                         </div>
                     </div>
 
-                    <div class="event-card card">
-                        <div class="card-header">
-                            <h3>2nd Semester Night 2026</h3>
-                            <span class="badge open">Open Now</span>
-                        </div>
-                        <p class="event-time">March 9, 2026 - 8:00 AM - 11:00 AM</p>
-                        <div class="progress-container"><div class="progress-bar" style="width: 85%;"></div></div>
-                        <div class="card-footer">
-                            <span class="expiry-text">Code expired soon</span>
-                            <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="section-upcoming" class="dashboard-section" style="display: none;">
-                <header class="top-bar">
-                    <div class="welcome-text">
-                        <h1>Upcoming Events</h1>
-                        <p>Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026</p>
-                    </div>
-                    <div class="top-icons">
-                        <div class="icon-circle"><i class="far fa-bell"></i></div>
-                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
-                        <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
-                    </div>
-                </header>
-
-                <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
-                    <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
-                </div>
-
-                <div class="upcoming-events-grid">
-                    <div class="event-card card">
-                        <div class="card-header">
-                            <h3>Cultural Night 2026</h3>
-                            <span class="badge upcoming">Upcoming</span>
-                        </div>
-                        <p class="event-date">March 15, 2026 - 8:00 AM</p>
-                        <div class="divider"></div>
-                        <div class="card-footer upcoming-footer">
-                            <span class="open-time">Open Mar 15, 7:45 AM</span>
+                    <div class="events-group" style="margin-top: 40px;">
+                        <h2 class="group-title">Coming Soon</h2>
+                        <div id="upcoming-events-grid" class="upcoming-events-grid">
+                            <!-- Dynamic Upcoming Events -->
                         </div>
                     </div>
 
-                    <div class="event-card card">
-                        <div class="card-header">
-                            <h3>College Recognition Night</h3>
-                            <span class="badge upcoming">Upcoming</span>
-                        </div>
-                        <p class="event-date">March 15, 2026 - 8:00 AM</p>
-                        <div class="divider"></div>
-                        <div class="card-footer upcoming-footer">
-                            <span class="open-time">Open Mar 15, 7:45 AM</span>
-                        </div>
-                    </div>
-
-                    <div class="event-card card">
-                        <div class="card-header">
-                            <h3>Intramurals 2026</h3>
-                            <span class="badge upcoming">Upcoming</span>
-                        </div>
-                        <p class="event-date">March 15, 2026 - 8:00 AM</p>
-                        <div class="divider"></div>
-                        <div class="card-footer upcoming-footer">
-                            <span class="duration-text">5 Day Event</span>
+                    <div class="events-group" style="margin-top: 40px;">
+                        <h2 class="group-title">Past Events</h2>
+                        <div id="past-events-grid" class="upcoming-events-grid">
+                            <!-- Dynamic Past Events -->
                         </div>
                     </div>
                 </div>

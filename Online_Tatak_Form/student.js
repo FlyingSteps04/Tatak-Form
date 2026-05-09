@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const formatImageUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('/uploads')) {
+            return `${window.TatakApi.API_BASE_URL}${url}`;
+        }
+        return url;
+    };
+
     const modal = document.getElementById('logoutModal');
     const stayBtn = document.getElementById('stayLoggedIn');
     const confirmBtn = document.getElementById('confirmLogout');
@@ -6,14 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const topbarLogout = document.getElementById('topbarLogout');
 
     const navOverview = document.getElementById('nav-overview');
-    const navActiveEvents = document.getElementById('nav-active-events');
-    const navUpcoming = document.getElementById('nav-upcoming'); 
+    const navEvents = document.getElementById('nav-events');
     const navHistory = document.getElementById('nav-history');
     const navReports = document.getElementById('nav-reports');
 
     const sectionOverview = document.getElementById('section-overview');
-    const sectionActiveEvents = document.getElementById('section-active-events');
-    const sectionUpcoming = document.getElementById('section-upcoming');
+    const sectionEvents = document.getElementById('section-events');
     const sectionHistory = document.getElementById('section-history');
     const sectionReports = document.getElementById('section-reports');
 
@@ -212,11 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
      * Simple helper to hide all sections and remove active state from all nav items.
      */
     const resetNavigation = () => {
-        [sectionOverview, sectionActiveEvents, sectionUpcoming, sectionHistory, sectionReports].forEach(sec => {
+        [sectionOverview, sectionEvents, sectionHistory, sectionReports].forEach(sec => {
             if (sec) sec.style.display = 'none';
         });
         
-        [navOverview, navActiveEvents, navUpcoming, navHistory, navReports].forEach(nav => {
+        [navOverview, navEvents, navHistory, navReports].forEach(nav => {
             if (nav) nav.classList.remove('active');
         });
     };
@@ -263,6 +269,186 @@ document.addEventListener('DOMContentLoaded', () => {
         if (attendedPill) attendedPill.textContent = `${attendedCount} Attended`;
         if (absentPill) absentPill.textContent = `${absentCount} absent`;
         if (ratePill) ratePill.textContent = `${rate}% rate`;
+    }
+
+    /**
+     * Renders a single event card for either Active or Upcoming grids.
+     */
+    function renderEventCard(event, status = 'active') {
+        const isUpcoming = status === 'upcoming';
+        const isPast = status === 'past';
+        const badgeClass = isUpcoming ? 'upcoming' : (isPast ? 'closed' : 'open');
+        const badgeText = isUpcoming ? 'Upcoming' : (isPast ? 'Closed' : 'Open Now');
+        const dateStr = new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = new Date(event.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        
+        // Calculate progress for active events (arbitrary visualization for now)
+        const progress = isUpcoming ? 0 : (isPast ? 100 : 85); 
+
+        return `
+            <div class="event-card card animate-in">
+                <div class="card-header">
+                    <h3>${event.name}</h3>
+                    <div class="badge-container">
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                        ${!isUpcoming && !isPast ? '<span class="closes-hint">In progress</span>' : ''}
+                    </div>
+                </div>
+                <p class="${isUpcoming ? 'event-date' : 'event-time'}">${dateStr} • ${timeStr}</p>
+                ${!isUpcoming && !isPast ? `
+                    <div class="progress-container"><div class="progress-bar" style="width: ${progress}%;"></div></div>
+                    <div class="card-footer">
+                        <span class="expiry-text">Verified Attendance</span>
+                        <button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>
+                    </div>
+                ` : `
+                    <div class="divider"></div>
+                    <div class="card-footer upcoming-footer">
+                        <span class="open-time">${isPast ? 'Event Ended' : 'Opens ' + timeStr}</span>
+                    </div>
+                `}
+            </div>
+        `;
+    }
+
+    /**
+     * Loads events and distributes them into active and upcoming containers.
+     */
+    async function loadEvents() {
+        const activeGrid = document.getElementById('active-events-grid');
+        const upcomingGrid = document.getElementById('upcoming-events-grid');
+        const pastGrid = document.getElementById('past-events-grid');
+        
+        try {
+            console.log('Fetching events...');
+            const response = await window.TatakApi.apiRequest('/events');
+            console.log('Events response:', response);
+            
+            const allEvents = Array.isArray(response.data) ? response.data.filter(e => e.approval_status === 'Approved') : [];
+            
+            const now = new Date();
+            const activeEvents = allEvents.filter(e => new Date(e.start_date) <= now && (!e.end_date || new Date(e.end_date) >= now));
+            const upcomingEvents = allEvents.filter(e => new Date(e.start_date) > now);
+            const pastEvents = allEvents.filter(e => e.end_date && new Date(e.end_date) < now);
+
+            if (activeGrid) {
+                activeGrid.innerHTML = activeEvents.length 
+                    ? activeEvents.map(e => renderEventCard(e, 'active')).join('')
+                    : '<p style="grid-column: 1/-1; color: #7a829a; padding: 20px;">No events currently happening.</p>';
+            }
+
+            if (upcomingGrid) {
+                upcomingGrid.innerHTML = upcomingEvents.length
+                    ? upcomingEvents.map(e => renderEventCard(e, 'upcoming')).join('')
+                    : '<p style="grid-column: 1/-1; color: #7a829a; padding: 20px;">No upcoming events scheduled.</p>';
+            }
+
+            if (pastGrid) {
+                pastGrid.innerHTML = pastEvents.length
+                    ? pastEvents.map(e => renderEventCard(e, 'past')).join('')
+                    : '<p style="grid-column: 1/-1; color: #7a829a; padding: 20px;">No past events found.</p>';
+            }
+
+            return { activeEvents, upcomingEvents, pastEvents };
+        } catch (err) {
+            console.error('Error loading events:', err);
+        }
+    }
+
+    /**
+     * Updates the Overview section with real stats and the "Next Event" card.
+     */
+    async function loadOverview() {
+        const nextEventContainer = document.getElementById('overview-next-event');
+        const statsContainer = document.getElementById('overview-stats');
+
+        try {
+            // 1. Fetch History for Stats
+            const historyData = await window.TatakApi.apiRequest('/attendance/users');
+            const rows = Array.isArray(historyData.data) ? historyData.data : [];
+            const attendedCount = rows.filter((item) => item.status === 'Present' || item.status === 'Late').length;
+            const absentCount = rows.filter((item) => item.status === 'Absent').length;
+            const rate = rows.length ? Math.round((attendedCount / rows.length) * 100) : 0;
+
+            if (statsContainer) {
+                statsContainer.innerHTML = `
+                    <div class="circular-progress" style="background: conic-gradient(var(--sidebar-bg) ${rate}%, #edf2f7 0);"><span class="percent" style="background: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">${rate}%</span></div>
+                    <div class="stat-boxes">
+                        <div class="stat-box attended"><strong>${attendedCount}</strong><span>Attended</span></div>
+                        <div class="stat-box missed"><strong>${absentCount}</strong><span>Missed</span></div>
+                    </div>
+                `;
+            }
+
+            // 2. Fetch Events for "Next Event"
+            const eventResponse = await window.TatakApi.apiRequest('/events');
+            const approvedEvents = Array.isArray(eventResponse.data) ? eventResponse.data.filter(e => e.approval_status === 'Approved') : [];
+            const now = new Date();
+            
+            // Prioritize active events, then closest upcoming
+            let nextEvent = approvedEvents.find(e => new Date(e.start_date) <= now && (!e.end_date || new Date(e.end_date) >= now));
+            if (!nextEvent) {
+                nextEvent = approvedEvents.filter(e => new Date(e.start_date) > now).sort((a,b) => new Date(a.start_date) - new Date(b.start_date))[0];
+            }
+
+            if (nextEventContainer) {
+                if (nextEvent) {
+                    const isUpcoming = new Date(nextEvent.start_date) > now;
+                    const isPast = nextEvent.end_date && new Date(nextEvent.end_date) < now;
+                    const badgeClass = isUpcoming ? 'upcoming' : (isPast ? 'closed' : 'open');
+                    const badgeText = isUpcoming ? 'Coming Up' : (isPast ? 'Closed' : 'Open Now');
+                    
+                    nextEventContainer.innerHTML = `
+                        <div class="card-header">
+                            <h3>${nextEvent.name}</h3>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <p class="event-time">${new Date(nextEvent.start_date).toLocaleString()}</p>
+                        <div class="progress-container"><div class="progress-bar" style="width: ${isUpcoming ? 0 : 100}%;"></div></div>
+                        <div class="card-footer">
+                            <span class="expiry-text">${isUpcoming ? 'Get ready!' : 'Scan now to attend'}</span>
+                            ${!isUpcoming ? '<button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>' : ''}
+                        </div>
+                    `;
+                } else {
+                    nextEventContainer.innerHTML = `<h3>No Events Scheduled</h3><p class="event-time">Check back later for updates.</p>`;
+                }
+            }
+        } catch (err) {
+            console.error('Error refreshing overview:', err);
+        }
+    }
+
+    /**
+     * Loads the logged-in student's information and updates the UI.
+     */
+    async function loadUserInfo() {
+        try {
+            const res = await window.TatakApi.apiRequest('/auth/me');
+            const user = res;
+            if (user) {
+                // Update Welcome Text
+                const welcomeH1 = document.querySelector('.welcome-text h1');
+                if (welcomeH1) welcomeH1.innerHTML = `Hello, <span class="highlight" style="color: #f59e0b; text-transform: uppercase;">${user.fname || 'Student'}</span>`;
+                
+                // Update Profile Avatar
+                const profileAvatar = document.querySelector('.profile-avatar');
+                if (profileAvatar && user.profile_picture) {
+                    profileAvatar.src = formatImageUrl(user.profile_picture);
+                    profileAvatar.style.objectFit = 'cover';
+                    profileAvatar.style.borderRadius = '50%';
+                }
+            }
+        } catch (err) {
+            console.error('Error loading user info:', err);
+        }
+    }
+
+    /**
+     * Refreshes the entire dashboard data.
+     */
+    async function refreshDashboard() {
+        await Promise.all([loadUserInfo(), loadOverview(), loadEvents(), loadStudentAttendance()]);
     }
 
     /**
@@ -324,22 +510,16 @@ document.addEventListener('DOMContentLoaded', () => {
             resetNavigation();
             navOverview.classList.add('active');
             if (sectionOverview) sectionOverview.style.display = 'block';
+            loadOverview();
         });
     }
 
-    if (navActiveEvents) {
-        navActiveEvents.addEventListener('click', () => {
+    if (navEvents) {
+        navEvents.addEventListener('click', () => {
             resetNavigation();
-            navActiveEvents.classList.add('active');
-            if (sectionActiveEvents) sectionActiveEvents.style.display = 'block';
-        });
-    }
-
-    if (navUpcoming) {
-        navUpcoming.addEventListener('click', () => {
-            resetNavigation();
-            navUpcoming.classList.add('active');
-            if (sectionUpcoming) sectionUpcoming.style.display = 'block';
+            navEvents.classList.add('active');
+            if (sectionEvents) sectionEvents.style.display = 'block';
+            loadEvents();
         });
     }
 
@@ -362,8 +542,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Initial Dashboard Refresh
+    refreshDashboard();
+
     // Global click handler for closing logout modal by clicking outside.
     window.addEventListener('click', (e) => {
         if (e.target === modal) hideModal();
     });
+    // Check for pending notifications
+    if (window.TatakApi && window.TatakApi.checkPendingToast) {
+        window.TatakApi.checkPendingToast();
+    }
 });

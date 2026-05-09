@@ -36,7 +36,14 @@ async function apiRequest(path, options = {}) {
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    let url = `${API_BASE_URL}${path}`;
+    // Add cache busting for GET requests to ensure we always get fresh data
+    if (!options.method || options.method.toUpperCase() === 'GET') {
+        const separator = url.includes('?') ? '&' : '?';
+        url += `${separator}_t=${Date.now()}`;
+    }
+
+    const response = await fetch(url, {
         ...options,
         headers,
     });
@@ -70,15 +77,22 @@ function setPendingToast(message, type = 'info') {
 }
 
 /**
+ * Clears any pending toast from session storage.
+ */
+function clearPendingToast() {
+    sessionStorage.removeItem('tatak_pending_toast');
+}
+
+/**
  * Checks for and displays any pending toasts from a previous session.
  */
 function checkPendingToast() {
     const pending = sessionStorage.getItem('tatak_pending_toast');
     if (pending) {
         const { message, type } = JSON.parse(pending);
-        sessionStorage.removeItem('tatak_pending_toast');
+        clearPendingToast();
         // Slightly longer delay to ensure dashboard scripts have finished initial rendering
-        setTimeout(() => showToast(message, type), 500);
+        setTimeout(() => showToast(message, type), 1000);
     }
 }
 
@@ -88,8 +102,8 @@ function showToast(message, type = 'info') {
         const style = document.createElement('style');
         style.id = 'tatak-toast-styles';
         style.innerHTML = `
-            .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-            .toast { background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 12px; min-width: 280px; border-left: 4px solid #3b82f6; animation: toastSlideIn 0.3s ease forwards; font-family: 'Inter', sans-serif; font-size: 14px; }
+            .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+            .toast { background: white; color: #1e293b; padding: 12px 20px; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 12px; min-width: 320px; border-left: 4px solid #3b82f6; animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: 'Inter', sans-serif; font-size: 14px; }
             .toast.success { border-left-color: #10b981; }
             .toast.error { border-left-color: #ef4444; }
             .toast.info { border-left-color: #3b82f6; }
@@ -97,8 +111,8 @@ function showToast(message, type = 'info') {
             .toast-icon { font-size: 18px; }
             .toast.success .toast-icon { color: #10b981; }
             .toast.error .toast-icon { color: #ef4444; }
-            @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-            @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+            @keyframes toastSlideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes toastSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
         `;
         document.head.appendChild(style);
     }
@@ -136,7 +150,8 @@ window.TatakApi = {
     clearAuthAndRedirect,
     apiRequest,
     showToast,
-    setPendingToast
+    setPendingToast,
+    clearPendingToast
 };
 
 // Auto-check for pending toasts on every load

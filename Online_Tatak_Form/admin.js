@@ -44,12 +44,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if(modal) modal.style.display = 'none';
     };
 
-    window.openEditOrgModal = (id, name, desc, status) => {
+    window.formatImageUrl = (url) => {
+        if (!url) return '';
+        if (typeof url === 'string' && url.startsWith('/uploads')) {
+            return `${window.TatakApi.API_BASE_URL}${url}`;
+        }
+        return url;
+    };
+
+    window.openEditOrgModal = (id, name, desc, status, logo) => {
         document.getElementById('editOrgOldId').value = id;
         document.getElementById('editOrgId').value = id;
         document.getElementById('editOrgName').value = name;
         document.getElementById('editOrgDesc').value = desc;
         document.getElementById('editOrgStatus').value = status;
+        document.getElementById('editOrgLogo').value = logo || '';
+        document.getElementById('editOrgError').style.display = 'none';
+
+        // Update Logo Preview
+        const placeholder = document.querySelector('#editOrgModal .avatar-upload-placeholder');
+        if (placeholder) {
+            const logoPreview = placeholder.querySelector('img');
+            const logoIcon = placeholder.querySelector('i');
+            if (logo) {
+                logoPreview.src = formatImageUrl(logo);
+                logoPreview.style.display = 'block';
+                if (logoIcon) logoIcon.style.display = 'none';
+            } else {
+                logoPreview.src = '';
+                logoPreview.style.display = 'none';
+                if (logoIcon) logoIcon.style.display = 'block';
+            }
+        }
+
         window.openModal('editOrgModal');
     };
 
@@ -63,7 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/organizations/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteOrgModal');
-                        window.TatakApi.showToast(`"${name}" has been deleted successfully.`, 'success');
+                        const msg = `"${name}" has been deleted successfully.`;
+                        window.TatakApi.setPendingToast(msg, 'success');
+                        window.TatakApi.showToast(msg, 'success');
                         loadAdminOrganizations();
                     } else {
                         window.TatakApi.showToast(res.error || 'Failed to delete organization.', 'error');
@@ -111,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/auth/users/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteStudentModal');
+                        window.TatakApi.setPendingToast('Student deleted successfully', 'success');
                         window.TatakApi.showToast('Student deleted successfully', 'success');
                         loadAdminStudentsTable();
                     }
@@ -148,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/events/${id}/approve`, { method: 'PUT' });
                     if (res && res.success) {
                         window.closeModal('approveEventModal');
+                        window.TatakApi.setPendingToast('Event approved successfully!', 'success');
                         window.TatakApi.showToast('Event approved successfully!', 'success');
                         loadAdminEventsTable();
                         loadAdminOverviewMetrics();
@@ -189,7 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const res = await window.TatakApi.apiRequest(`/events/${id}`, { method: 'DELETE' });
                     if (res && res.success) {
                         window.closeModal('deleteEventModal');
-                        window.TatakApi.showToast(isPending ? 'Event rejected.' : 'Event deleted successfully.', 'success');
+                        const msg = isPending ? 'Event rejected.' : 'Event deleted successfully.';
+                        window.TatakApi.setPendingToast(msg, 'success');
+                        window.TatakApi.showToast(msg, 'success');
                         loadAdminEventsTable();
                         loadAdminOverviewMetrics();
                     } else {
@@ -207,12 +240,30 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openModal('deleteEventModal');
     };
 
-    window.openEditOfficerModal = (id, name, orgId, role, status) => {
+    window.openEditOfficerModal = (id, name, orgId, role, status, profilePic) => {
         document.getElementById('editOfficerId').value = id;
         document.getElementById('editOffName').value = name;
         document.getElementById('editOffOrg').value = orgId;
         document.getElementById('editOffRole').value = role;
         document.getElementById('editOffStatus').value = status;
+        document.getElementById('editOffProfilePic').value = profilePic || '';
+
+        // Update Profile Pic Preview
+        const placeholder = document.querySelector('#editOfficerModal .avatar-upload-placeholder');
+        if (placeholder) {
+            const preview = placeholder.querySelector('img');
+            const icon = placeholder.querySelector('i');
+            if (profilePic) {
+                preview.src = formatImageUrl(profilePic);
+                preview.style.display = 'block';
+                if (icon) icon.style.display = 'none';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                if (icon) icon.style.display = 'block';
+            }
+        }
+
         window.openModal('editOfficerModal');
     };
 
@@ -222,21 +273,23 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmBtn.onclick = async () => {
                 confirmBtn.innerText = 'Removing...';
                 confirmBtn.disabled = true;
+                
+                // Clear any old notifications before starting
+                window.TatakApi.clearPendingToast();
+                
                 try {
-                    // Step 1: Remove from officers table (Requires officer_id)
+                    // Set a temporary flag in case the browser refreshes during image deletion
+                    sessionStorage.setItem('pending_officer_deletion_sync', 'true');
+
+                    // Backend already handles recursive deletion of the user account
                     await window.TatakApi.apiRequest(`/officers/${officerId}`, { method: 'DELETE' });
-                    
-                    // Step 2: Remove from users table (Requires user_id)
-                    try {
-                        if (userId) {
-                            await window.TatakApi.apiRequest(`/auth/users/${userId}`, { method: 'DELETE' });
-                        }
-                    } catch (userErr) {
-                        console.warn('Officer record removed, but user account might have other dependencies:', userErr.message);
-                    }
+
+                    // Success! Clear the flag
+                    sessionStorage.removeItem('pending_officer_deletion_sync');
 
                     window.closeModal('deleteOfficerModal');
                     loadAdminOfficersTable();
+                    window.TatakApi.setPendingToast('Officer and user account removed successfully.', 'success');
                     window.TatakApi.showToast('Officer and user account removed successfully.', 'success');
                 } catch (err) {
                     console.error('Error removing officer:', err);
@@ -308,13 +361,35 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (section === 'organization') {
             mainTitle.innerText = 'Organization Management';
             actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Organization';
-            actionBtn.onclick = () => openModal('addOrgModal');
+            actionBtn.onclick = () => {
+                const form = document.getElementById('addOrgForm');
+                if (form) form.reset();
+                const placeholder = document.querySelector('#addOrgModal .avatar-upload-placeholder');
+                if (placeholder) {
+                    const preview = placeholder.querySelector('img');
+                    const icon = placeholder.querySelector('i');
+                    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+                    if (icon) icon.style.display = 'block';
+                }
+                openModal('addOrgModal');
+            };
             renderOrganizations();
         }
         else if (section === 'officers') {
             mainTitle.innerText = 'Officer Directory';
             actionBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Officer';
-            actionBtn.onclick = () => openModal('addOfficerModal');
+            actionBtn.onclick = () => {
+                const form = document.getElementById('officerForm');
+                if (form) form.reset();
+                const placeholder = document.querySelector('#addOfficerModal .avatar-upload-placeholder');
+                if (placeholder) {
+                    const preview = placeholder.querySelector('img');
+                    const icon = placeholder.querySelector('i');
+                    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+                    if (icon) icon.style.display = 'block';
+                }
+                openModal('addOfficerModal');
+            };
             renderOfficers();
         }
         else if (section === 'students') {
@@ -908,7 +983,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusCls = 'pending';
                     }
 
-                    const orgName = event.organization_name || organizations.find(o => String(o.organization_id) === String(event.organization_id))?.name || 'N/A';
+                    const orgObj = organizations.find(o => String(o.organization_id) === String(event.organization_id));
+                    const orgName = event.organization_name || orgObj?.name || 'N/A';
+                    const orgLogo = orgObj?.logo || '655609284_1426759675272887_2726655014418430573_n.png';
                     
                     let actionHtml = '';
                     if (event.approval_status === 'Pending') {
@@ -927,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                    <img src="${orgLogo}" alt="Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                                     <span style="font-weight: 700; color: #1e293b;">${event.name}</span>
                                 </div>
                             </td>
@@ -1001,6 +1078,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const statusText = org.is_active === 1 ? 'Active' : 'Inactive';
                     const statusClass = org.is_active === 1 ? 'Active' : 'Inactive';
 
+                    // Handle Org Logo: Image or Initials
+                    const orgLogoContent = org.logo 
+                        ? `<img src="${formatImageUrl(org.logo)}" alt="${org.name}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">`
+                        : short;
+
                     return `
                         <div class="org-mini-card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: -5px;">
@@ -1008,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="status-badge ${statusClass}">${statusText}</span>
                             </div>
                             <div class="mini-card-header">
-                                <div class="org-logo-icon ${color}">${short}</div>
+                                <div class="org-logo-icon ${org.logo ? '' : color}" style="overflow: hidden; display: flex; align-items: center; justify-content: center; background: ${org.logo ? '#ffffff' : ''}; border: ${org.logo ? '1px solid #edf2f7' : 'none'};">${orgLogoContent}</div>
                                 <div class="mini-card-titles">
                                     <h4>${org.name}</h4>
                                     <p>${org.description || 'No description available.'}</p>
@@ -1026,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                                 <div class="mini-card-actions">
-                                    <button class="btn-action-mini edit" onclick="window.openEditOrgModal('${org.organization_id}', '${org.name.replace(/'/g, "\\'")}', '${(org.description || '').replace(/'/g, "\\'")}', '${statusText}')" title="Edit"><i class="far fa-edit"></i></button>
+                                    <button class="btn-action-mini edit" onclick="window.openEditOrgModal('${org.organization_id}', '${org.name.replace(/'/g, "\\'")}', '${(org.description || '').replace(/'/g, "\\'")}', '${statusText}', '${org.logo || ''}')" title="Edit"><i class="far fa-edit"></i></button>
                                     <button class="btn-action-mini delete" onclick="window.openDeleteOrgModal('${org.organization_id}', '${org.name.replace(/'/g, "\\'")}')" title="Delete"><i class="far fa-trash-alt"></i></button>
                                 </div>
                             </div>
@@ -1048,7 +1130,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const topCount = students.filter(s => String(s.organization_id) === String(topOrg.organization_id)).length;
                     const topEv = events.filter(e => String(e.organization_id) === String(topOrg.organization_id)).length;
                     if(document.getElementById('top-org-name')) {
-                        document.getElementById('top-org-name').innerText = getOrgInitials(topOrg.name);
+                        const topNameEl = document.getElementById('top-org-name');
+                        if (topOrg.logo) {
+                            topNameEl.innerHTML = `<img src="${formatImageUrl(topOrg.logo)}" style="width: 100px; height: 100px; object-fit: contain; background: white; border-radius: 12px; padding: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
+                        } else {
+                            topNameEl.innerText = getOrgInitials(topOrg.name);
+                        }
                     }
                     if(document.getElementById('top-org-full')) document.getElementById('top-org-full').innerText = topOrg.name;
                     if(document.getElementById('top-org-members')) document.getElementById('top-org-members').innerText = topCount;
@@ -1058,6 +1145,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error('Error loading orgs:', err);
         }
+    }
+
+    function formatImageUrl(path) {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        const apiBase = window.TatakApi ? window.TatakApi.API_BASE_URL : 'http://localhost:3002';
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        return `${apiBase}${cleanPath}`;
     }
 
     async function loadAdminOfficersTable() {
@@ -1077,37 +1172,57 @@ document.addEventListener('DOMContentLoaded', () => {
             if (officers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: #64748b;">No officers found.</td></tr>';
             } else {
-                tbody.innerHTML = officers.map(off => {
+                const rowsHTML = officers.map(off => {
                     const fullName = off.fname || 'Unknown Officer';
                     const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2);
                     const orgName = off.name || 'N/A';
                     const position = off.position || 'Officer';
                     const posLower = position.toLowerCase();
+                    
                     let posClass = 'badge-pill-yellow';
                     if (posLower.includes('president') && !posLower.includes('vice')) posClass = 'badge-pill-purple';
                     else if (posLower.includes('vice')) posClass = 'badge-pill-blue';
                     else if (posLower.includes('secretary')) posClass = 'badge-pill-green';
                     else if (posLower.includes('treasurer')) posClass = 'badge-pill-amber';
+                    else if (posLower.includes('auditor') || posLower.includes('officer')) posClass = 'badge-pill-yellow';
+                    else if (posLower.includes('admin')) posClass = 'badge-pill-red';
 
                     const isOrgInactive = orgs.find(o => String(o.organization_id) === String(off.organization_id))?.is_active === 0;
+
+                    const now = new Date();
+                    const termStart = off.term_start ? new Date(off.term_start) : null;
+                    const termEnd = off.term_end ? new Date(off.term_end) : null;
+                    const isFutureTerm = termStart && now < termStart;
+                    const isExpiredTerm = termEnd && now > termEnd;
 
                     let statusColor = '#10b981', statusLabel = '● Active';
                     if (off.status === 'Inactive') {
                         statusColor = '#ef4444';
                         statusLabel = '● Inactive';
+                    } else if (isFutureTerm) {
+                        statusColor = '#6366f1'; // Indigo for pending
+                        statusLabel = '● Pending';
+                    } else if (isExpiredTerm) {
+                        statusColor = '#64748b'; // Muted for expired
+                        statusLabel = '● Expired';
                     } else if (isOrgInactive) {
                         statusColor = '#f59e0b';
                         statusLabel = '● Org Inactive';
                     }
+
+                    // Handle Avatar: Image or Initials
+                    const avatarContent = off.profile_picture 
+                        ? `<img src="${formatImageUrl(off.profile_picture)}" alt="${fullName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                        : initials;
                     
                     return `
                         <tr>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 15px;">
-                                    <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);">${initials}</div>
+                                    <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); overflow: hidden;">${avatarContent}</div>
                                     <div style="display: flex; flex-direction: column;">
                                         <strong style="color: #1e293b; font-size: 0.95rem;">${fullName}</strong>
-                                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${off.user_id || '---'}</span>
+                                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${off.stud_id_number || '---'}</span>
                                     </div>
                                 </div>
                             </td>
@@ -1116,16 +1231,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td class="text-center" style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
                             <td class="text-center"><span class="status-indicator-dot" style="color: ${statusColor};">${statusLabel}</span></td>
                             <td class="text-center">
-                                <div class="action-icons" style="justify-content: center;">
-                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openEditOfficerModal('${off.officer_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}')" title="Edit Officer"><i class="far fa-edit"></i></button>
-                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteOfficerModal('${off.officer_id}', '${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt"></i></button>
+                                <div class="action-icons" style="display: flex; gap: 6px; justify-content: center;">
+                                    <button class="icon-edit" style="background: #eff6ff; color: #2563eb; width: 32px; height: 32px; border-radius: 8px;" onclick="window.openEditOfficerModal('${off.officer_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}', '${off.profile_picture || ''}')" title="Edit Officer"><i class="far fa-edit" style="font-size: 0.85rem;"></i></button>
+                                    <button class="icon-delete" style="background: #fff1f2; color: #ef4444; width: 32px; height: 32px; border-radius: 8px;" onclick="window.openDeleteOfficerModal('${off.officer_id}', '${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt" style="font-size: 0.85rem;"></i></button>
                                 </div>
                             </td>
                         </tr>`;
                 }).join('');
+                
+                // Clear the loading indicator
+                tbody.innerHTML = rowsHTML;
             }
         } catch (err) {
             console.error('Error loading officers:', err);
+            const tbodyErr = document.getElementById('admin-officers-table-body');
+            if (tbodyErr) tbodyErr.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 40px;">Failed to load officers.</td></tr>';
         }
     }
 
@@ -1323,14 +1443,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = addOrgForm.querySelector('button[type="submit"]');
             submitBtn.innerText = 'Saving...';
             submitBtn.disabled = true;
+            const logo = document.getElementById('addOrgLogo').value;
             try {
                 const res = await window.TatakApi.apiRequest('/organizations', { 
-                    method: 'POST', body: JSON.stringify({ organization_id: id, name, description: desc, status: 'Active' }) 
+                    method: 'POST', body: JSON.stringify({ organization_id: id, name, description: desc, status: 'Active', logo }) 
                 });
                 if (res && res.success) {
                     window.closeModal('addOrgModal');
                     addOrgForm.reset();
                     loadAdminOrganizations();
+                    window.TatakApi.setPendingToast('Organization created successfully!', 'success');
                     window.TatakApi.showToast('Organization created successfully!', 'success');
                 } else { window.TatakApi.showToast(res?.error || 'Failed to create organization', 'error'); }
             } catch (err) { window.TatakApi.showToast('An error occurred while creating the organization.', 'error'); }
@@ -1366,18 +1488,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 }
+                const logo = document.getElementById('editOrgLogo').value;
                 const res = await window.TatakApi.apiRequest(`/organizations/${oldId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ 
                         organization_id: newId, 
                         name, 
                         description: desc, 
-                        is_active: status === 'Active' ? 1 : 0 
+                        is_active: status === 'Active' ? 1 : 0,
+                        logo
                     })
                 });
                 if (res && res.success) {
                     window.closeModal('editOrgModal');
                     loadAdminOrganizations();
+                    window.TatakApi.setPendingToast('Organization updated successfully!', 'success');
                     window.TatakApi.showToast('Organization updated successfully!', 'success');
                 } else {
                     const errMsg = res.message || 'Error updating organization.';
@@ -1416,6 +1541,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (res && res.success) {
                     window.closeModal('addEventModal');
+                    window.TatakApi.setPendingToast('Event created successfully!', 'success');
                     window.TatakApi.showToast('Event created successfully!', 'success');
                     loadAdminEventsTable();
                     loadAdminOverviewMetrics();
@@ -1488,6 +1614,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Clear any old notifications before starting
+            window.TatakApi.clearPendingToast();
+
             const officerData = {
                 stud_id_number: document.getElementById('offUsername').value,
                 username: document.getElementById('offUsername').value,
@@ -1499,84 +1628,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 position: document.getElementById('offPosition').value,
                 term_start: document.getElementById('offStart').value,
                 term_end: document.getElementById('offEnd').value,
-                status: document.getElementById('offStatus').value
+                status: document.getElementById('offStatus').value,
+                profile_picture: document.getElementById('offProfilePic').value
             };
-            
-            console.log('Sending officer registration data:', officerData);
+                console.log('Sending atomic officer registration data:', officerData);
             
             try {
-                let newUserId = null;
-                // Step 1: Register/Create the User account
-                try {
-                    const userRes = await window.TatakApi.apiRequest('/auth/register', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            stud_id_number: officerData.stud_id_number,
-                            username: officerData.username,
-                            email: officerData.email,
-                            password: officerData.password,
-                            fname: officerData.fname,
-                            role: officerData.role
-                        })
-                    });
-                    newUserId = userRes.id || (userRes.data && userRes.data.id);
-                } catch (regErr) {
-                    console.warn('Registration failed, checking if user already exists...', regErr.message);
-                    // If duplicate, try to find the existing user to get their ID
-                    if (regErr.message.includes('Duplicate entry') || regErr.message.includes('already exists')) {
-                        const usersRes = await window.TatakApi.apiRequest('/auth/users');
-                        const existingUser = (usersRes.data || usersRes).find(u => u.username === officerData.username);
-                        if (existingUser) {
-                            newUserId = existingUser.id;
-                            console.log('Found existing user with ID:', newUserId);
-                        } else {
-                            throw new Error('User exists but could not be found in directory.');
-                        }
-                    } else {
-                        throw regErr;
-                    }
-                }
-                
-                if (!newUserId) {
-                    throw new Error('Failed to obtain a valid User ID.');
-                }
+                // Set a temporary flag in case the browser refreshes during the image save
+                sessionStorage.setItem('pending_officer_creation_sync', 'true');
 
-                // Step 2: Link the user as an officer
-                // We send IDs as numbers but also ensure they are properly parsed.
-                const payload = {
-                    user_id: Number(newUserId),
-                    organization_id: Number(officerData.organization_id),
-                    position: officerData.position,
-                    term_start: officerData.term_start,
-                    term_end: officerData.term_end,
-                    status: officerData.status
-                };
-                
-                console.log('Step 2: Linking with payload:', payload);
-                
-                const officerLinkRes = await window.TatakApi.apiRequest('/officers', {
+                // Single Atomic Step: Register AND Link in one backend request
+                const res = await window.TatakApi.apiRequest('/auth/register', {
                     method: 'POST',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(officerData)
                 });
-                
-                console.log('Step 2 Response:', officerLinkRes);
 
-                if (officerLinkRes && (officerLinkRes.success || officerLinkRes.id)) {
+                if (res && res.success) {
+                    // Success! Clear the flag
+                    sessionStorage.removeItem('pending_officer_creation_sync');
+                    
                     window.closeModal('addOfficerModal');
+                    officerForm.reset();
                     loadAdminOfficersTable();
-                    addOfficerForm.reset();
+                    
+                    // Clear the avatar preview
+                    const preview = document.getElementById('addOffProfilePicPreview');
+                    if (preview) {
+                        preview.src = '';
+                        preview.style.display = 'none';
+                        const icon = preview.parentElement.querySelector('i');
+                        if (icon) icon.style.display = 'block';
+                    }
+
+                    window.TatakApi.setPendingToast('Officer created and linked successfully!', 'success');
                     window.TatakApi.showToast('Officer created and linked successfully!', 'success');
                 } else {
-                    const errMsg = officerLinkRes?.message || officerLinkRes?.error || 'Unknown error';
-                    window.TatakApi.showToast('User created, but linking failed: ' + errMsg, 'error');
+                    throw new Error(res.error || 'Failed to create officer.');
                 }
             } catch (err) { 
                 console.error('Error in officer creation flow:', err);
-                window.TatakApi.showToast('Error: ' + err.message, 'error');
+                // If it's a duplicate user, we still might want to link them if they aren't already an officer
+                if (err.message.includes('already exists')) {
+                    alert('This username or email already exists. If you want to promote an existing user to Officer, please use the Edit/Link feature (coming soon).');
+                } else {
+                    window.TatakApi.showToast('Error: ' + err.message, 'error');
+                }
             }
             finally { 
-                submitBtn.innerText = 'Save Officer'; 
-                submitBtn.disabled = false; 
+                submitBtn.innerText = 'Save Officer';
+                submitBtn.disabled = false;
             }
         });
     }
@@ -1598,12 +1698,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         fname: document.getElementById('editOffName').value,
                         organization_id: parseInt(document.getElementById('editOffOrg').value),
                         position: document.getElementById('editOffRole').value,
-                        status: document.getElementById('editOffStatus').value
+                        status: document.getElementById('editOffStatus').value,
+                        profile_picture: document.getElementById('editOffProfilePic').value
                     })
                 });
                 if (res && res.success) {
                     window.closeModal('editOfficerModal');
                     loadAdminOfficersTable();
+                    window.TatakApi.setPendingToast('Officer updated successfully!', 'success');
                     window.TatakApi.showToast('Officer updated successfully!', 'success');
                 }
             } catch (err) { 
@@ -1646,18 +1748,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.promptForImage = function(inputId, placeholder) {
+        const input = document.getElementById(inputId);
+        const currentUrl = input ? input.value : '';
+        const newUrl = prompt("Enter the image URL:", currentUrl);
+        
+        if (newUrl !== null) {
+            if (input) input.value = newUrl;
+            const preview = placeholder.querySelector('img');
+            const icon = placeholder.querySelector('i');
+            
+            if (newUrl.trim() !== '') {
+                preview.src = newUrl;
+                preview.style.display = 'block';
+                if (icon) icon.style.display = 'none';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                if (icon) icon.style.display = 'block';
+            }
+        }
+    };
+
     // Global Helpers for Avatar & Password
-    window.handleAvatarPreview = function(event) {
+    window.handleAvatarPreview = function(event, targetInputId, optionalPreviewId) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             const placeholderDiv = event.target.closest('.avatar-upload-placeholder');
-            const img = placeholderDiv.querySelector('img');
+            
+            // Try specific preview ID first, then fallback to sibling search
+            const img = optionalPreviewId ? document.getElementById(optionalPreviewId) : placeholderDiv.querySelector('img');
             const icon = placeholderDiv.querySelector('i');
+            
             reader.onload = function(e) {
-                img.src = e.target.result;
-                img.style.display = 'block';
+                const base64Data = e.target.result;
+                if (img) {
+                    img.src = base64Data;
+                    img.style.display = 'block';
+                }
                 if (icon) icon.style.display = 'none';
+                
+                // Update the hidden input with the base64 data
+                const input = document.getElementById(targetInputId);
+                if (input) input.value = base64Data;
             }
             reader.readAsDataURL(file);
         }
@@ -1678,5 +1812,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Load - Check for persisted section
     const lastSection = localStorage.getItem('admin_last_section') || 'overview';
-    showSection(lastSection);
+    
+    // Check for "Ghost" Creation (Refresh during upload)
+    if (sessionStorage.getItem('pending_officer_creation_sync')) {
+        sessionStorage.removeItem('pending_officer_creation_sync');
+        // Force Officers section and show success toast
+        localStorage.setItem('admin_last_section', 'officers');
+        showSection('officers');
+        
+        // Give the backend a moment to "warm up" after the file-save restart
+        setTimeout(() => {
+            loadAdminOfficersTable();
+            window.TatakApi.showToast('Officer created and directory synced!', 'success');
+        }, 500);
+    } else if (sessionStorage.getItem('pending_officer_deletion_sync')) {
+        sessionStorage.removeItem('pending_officer_deletion_sync');
+        localStorage.setItem('admin_last_section', 'officers');
+        showSection('officers');
+        
+        setTimeout(() => {
+            loadAdminOfficersTable();
+            window.TatakApi.showToast('Officer removed and directory synced!', 'success');
+        }, 500);
+    } else {
+        showSection(lastSection);
+    }
+
+    // Final check for any pending notifications
+    if (window.TatakApi && window.TatakApi.checkPendingToast) {
+        window.TatakApi.checkPendingToast();
+    }
 });

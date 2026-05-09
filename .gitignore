@@ -4,3 +4,5 @@ node_modules/
 dist/
 build/
 *.log
+tatak-attendance-system/uploads/
+tatak-attendance-system/qr/

@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const formatImageUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('/uploads')) {
+            return `${window.TatakApi.API_BASE_URL}${url}`;
+        }
+        return url;
+    };
 
     const logoutModal = document.getElementById('logoutModal');
     // Updated to match the new HTML IDs
@@ -70,11 +77,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const profile = res.data || res;
             _officerOrgId = profile.organization_id || profile.org_id || null;
 
-            // Also update the sidebar name/role if elements exist
+            // Also update the sidebar name/role and avatars
             const nameEl = document.querySelector('.officer-name');
             const roleEl = document.querySelector('.officer-role');
+            const widgetAvatar = document.querySelector('.widget-avatar');
+            const profileAvatar = document.querySelector('.profile-avatar');
+
             if (nameEl && profile.fname) nameEl.textContent = profile.fname;
             if (roleEl && profile.role) roleEl.textContent = profile.role;
+            
+            if (profile.profile_picture) {
+                const fullPicUrl = formatImageUrl(profile.profile_picture);
+                if (widgetAvatar) {
+                    widgetAvatar.src = fullPicUrl;
+                    widgetAvatar.style.objectFit = 'cover';
+                }
+                if (profileAvatar) {
+                    profileAvatar.src = fullPicUrl;
+                    profileAvatar.style.objectFit = 'cover';
+                }
+            }
         } catch (err) {
             // /officers/me may not exist — fall back to no filtering
             console.warn('Could not load officer profile, showing all events.', err);
@@ -168,11 +190,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const progressColor = attendanceRate > 80 ? '#10b981' : (attendanceRate > 50 ? '#f59e0b' : '#ef4444');
 
+            const avatarContent = item.profile_picture 
+                ? `<img src="${formatImageUrl(item.profile_picture)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                : initials;
+
             return `
             <tr>
                 <td>
                     <div class="att-student-cell">
-                        <div class="att-avatar">${initials}</div>
+                        <div class="att-avatar" style="overflow: hidden; display: flex; align-items: center; justify-content: center;">${avatarContent}</div>
                         <span class="att-student-name">${fullName}</span>
                     </div>
                 </td>
@@ -459,11 +485,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     statusColor = '#f59e0b';
                                 }
 
+                                const avatarContent = rec.profile_picture
+                                    ? `<img src="${formatImageUrl(rec.profile_picture)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                                    : initials;
+
                                 return `
                                     <div class="checkin-user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
                                         <div class="user-profile" style="display: flex; gap: 10px; align-items: center;">
-                                            <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; font-size: 11px;">
-                                                ${initials}
+                                            <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; font-size: 11px; overflow: hidden;">
+                                                ${avatarContent}
                                             </div>
                                             <div class="user-text">
                                                 <h4 style="margin: 0; color: #1e293b; font-size: 13px;">${rec.fname || 'Unknown Student'}</h4>
@@ -866,5 +896,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeNav = document.querySelector('.nav-item.active');
     if (activeNav && activeNav.id === 'nav-overview') {
         loadOfficerProfile().then(() => loadOfficerOverview());
+    }
+    // Check for pending notifications
+    if (window.TatakApi && window.TatakApi.checkPendingToast) {
+        window.TatakApi.checkPendingToast();
     }
 });

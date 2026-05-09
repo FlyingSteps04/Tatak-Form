@@ -167,7 +167,7 @@ router.post('/:eventId', authenticateToken, authenticateRole("Student"), validat
 router.get('/scan', (req, res) => {
     res.json({ message: "Attendance scan endpoint is active (requires POST)." });
 });
-
+    
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI / 180;

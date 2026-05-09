@@ -56,16 +56,17 @@ body {
 }
 
 .sidebar-header {
-    padding: 0 25px 30px;
+    padding: 24px 30px;
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.logo { width: 40px; height: 40px; }
+.side-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: contain; flex-shrink: 0; }
 
-.logo-text strong { display: block; font-size: 14px; letter-spacing: 0.5px; }
-.logo-text span { font-size: 11px; opacity: 0.7; }
+.side-title { display: flex; flex-direction: column; justify-content: center; }
+.side-title strong { display: block; font-size: 0.85rem; color: #FFFFFF; line-height: 1.2; margin: 0; letter-spacing: 0.5px; }
+.side-title span { font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; display: block; margin-top: 2px; }
 
 .nav-label {
     padding: 0 25px 15px;
@@ -168,6 +169,14 @@ body {
     padding: 25px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     margin-bottom: 25px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+    border-color: rgba(59, 130, 246, 0.2);
 }
 
 /* --- QR Card Specifics --- */
@@ -218,7 +227,10 @@ body {
 
 /* --- Event Cards --- */
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.badge.open { background: #dcfce7; color: var(--success); font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 700; }
+.badge { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid transparent; }
+.badge.open { background: #DCFCE7; color: #16A34A; border-color: #BBF7D0; }
+.badge.upcoming { background: #E0F2FE; color: #0284C7; border-color: #BAE6FD; }
+.badge.closed { background: #F3F4F6; color: #4B5563; border-color: #E5E7EB; }
 
 .event-time { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
 
@@ -462,13 +474,37 @@ body {
 }
 
 /* Optional: Smooth transition when switching */
-.dashboard-section {
-    animation: fadeIn 0.3s ease;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.animate-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.group-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: var(--accent-blue);
+    border-radius: 2px;
 }
 /* Sidebar update: Ensure the Upcoming nav item is clickable */
 #nav-upcoming { cursor: pointer; }
@@ -482,12 +518,9 @@ body {
 
 /* Badge for Upcoming (Blue/Purple tint) */
 .badge.upcoming {
-    background: #e0e7ff;
-    color: #4338ca;
-    font-size: 10px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 700;
+    background: #E0F2FE;
+    color: #0284C7;
+    border-color: #BAE6FD;
 }
 
 /* Specifics for Upcoming Cards */
@@ -545,7 +578,7 @@ body {
 /* List Layout */
 .history-header {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 0.5fr;
+    grid-template-columns: 1fr 1fr 1fr;
     padding: 15px 20px;
     color: #a3aed0;
     font-size: 12px;
@@ -553,9 +586,14 @@ body {
     border-bottom: 1px solid #f0f2f8;
 }
 
+.history-header span:nth-child(2),
+.history-header span:nth-child(3) {
+    text-align: center;
+}
+
 .history-row {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 0.5fr;
+    grid-template-columns: 1fr 1fr 1fr;
     padding: 15px 20px;
     align-items: center;
     border-bottom: 1px solid #f0f2f8;
@@ -581,16 +619,23 @@ body {
 .status-icon.danger { background: #fff1f0; color: #ff4d4f; }
 
 .event-name { font-weight: 700; color: #1b2559; }
-.event-dt { color: #1b2559; font-size: 14px; }
+.event-dt { 
+    color: #1b2559; 
+    font-size: 14px; 
+    text-align: center;
+}
 
 /* Status Badges */
 .status-badge {
-    padding: 4px 12px;
+    padding: 6px 16px;
     border-radius: 12px;
     font-size: 11px;
     font-weight: 700;
     text-align: center;
     border: 1px solid transparent;
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
 }
 
 .status-badge.attended { border-color: #00b365; color: #00b365; }

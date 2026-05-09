@@ -1,8 +1,8 @@
 import { pool } from '../Database/connection.js'
 
 export const getAllOrganizationOfficers = async () => {
-    const query = `SELECT oo.officer_id, oo.organization_id, u.fname, u.role, o.name, u.id AS user_id,
-                          oo.position, oo.term_start, oo.term_end, oo.status
+    const query = `SELECT oo.officer_id, oo.organization_id, u.fname, u.role, u.profile_picture, o.name, u.id AS user_id,
+                          u.stud_id_number, oo.position, oo.term_start, oo.term_end, oo.status
                     FROM organization_officer oo 
                     JOIN users u ON oo.user_id = u.id 
                     JOIN organizations o ON oo.organization_id = o.organization_id`;
@@ -11,7 +11,7 @@ export const getAllOrganizationOfficers = async () => {
 }
 
 export const getOrganizationOfficerByID = async (officerId) => {
-    const query = `SELECT oo.officer_id, oo.organization_id, u.fname, u.role, o.name, u.id AS user_id,
+    const query = `SELECT oo.officer_id, oo.organization_id, u.fname, u.role, u.profile_picture, o.name, u.id AS user_id,
                           oo.position, oo.term_start, oo.term_end, oo.status
                     FROM organization_officer oo 
                     JOIN users u ON oo.user_id = u.id 

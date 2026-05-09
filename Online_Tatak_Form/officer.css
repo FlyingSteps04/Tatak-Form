@@ -41,17 +41,17 @@ body {
 }
 
 .sidebar-header {
-    padding: 0 24px;
+    padding: 24px 30px;
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 32px;
 }
 
-.logo { width: 42px; height: 42px; }
+.side-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: contain; flex-shrink: 0; }
 
-.logo-text strong { display: block; font-size: 13px; letter-spacing: 0.5px; }
-.logo-text span { font-size: 10px; color: var(--text-muted); }
+.side-title { display: flex; flex-direction: column; justify-content: center; }
+.side-title strong { display: block; font-size: 0.85rem; color: #FFFFFF; line-height: 1.2; margin: 0; letter-spacing: 0.5px; }
+.side-title span { font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; display: block; margin-top: 2px; }
 
 /* Sidebar Profile Widget */
 .profile-widget {
@@ -65,7 +65,7 @@ body {
     margin: 0 20px 32px;
 }
 
-.widget-avatar { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+.widget-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
 .officer-name { font-size: 14px; font-weight: 600; }
 .officer-role { font-size: 11px; color: var(--text-muted); }
 

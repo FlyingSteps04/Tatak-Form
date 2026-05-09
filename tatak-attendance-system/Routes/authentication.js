@@ -11,20 +11,45 @@ import { addNotification } from '../Database/notifications.js'
 import dotenv from 'dotenv'
 dotenv.config()
 import { pool } from '../Database/connection.js'
+import { processImage } from '../scripts/imageHelper.js'
 
 const router = express.Router()
 
 router.post('/register', async (req, res) => {
-    const { stud_id_number, fname, email, username, password, role } = req.body
+    const { stud_id_number, fname, email, username, password, role, profile_picture } = req.body
     
     const validRoles = ['Student', 'Admin', 'Officer']
     if(!validRoles.includes(role)) res.status(400).json({error: "Invalid Role!"})
 
     if(role==='Student' && !stud_id_number) res.status(400).json({error: "Student ID is required!"})
     
+    // Convert base64 profile picture to local file path
+    const finalProfilePic = processImage(profile_picture, 'profiles');
+    
     const hashedPassword = await bcrypt.hash(password, 10)
-    const newUserID = await addUser(stud_id_number, fname, email, username, hashedPassword, role)
-    res.status(201).json({message: "User Created", id: newUserID.insertId})
+    
+    try {
+        const { organization_id } = req.body;
+        const newUserID = await addUser(stud_id_number, fname, email, username, hashedPassword, role, organization_id, finalProfilePic)
+        const userId = newUserID.insertId;
+
+        // If it's an officer, link them automatically to the organization
+        if (role === 'Officer' && organization_id) {
+            const { position, term_start, term_end, status } = req.body;
+            await pool.query(
+                "INSERT INTO organization_officer (user_id, organization_id, position, term_start, term_end, status) VALUES (?, ?, ?, ?, ?, ?)",
+                [userId, organization_id, position, term_start, term_end, status || 'Active']
+            );
+        }
+
+        res.status(201).json({message: "User Created and Linked", id: userId, success: true})
+    } catch (err) {
+        if (err.message.includes('Duplicate entry') || err.message.includes('already exists')) {
+            return res.status(409).json({ error: "Username or Email already exists", code: 'ER_DUP_ENTRY' });
+        }
+        console.error('Registration error:', err);
+        res.status(500).json({ error: "Failed to register user" });
+    }
 })
 
 router.post('/login', async (req, res) => {
@@ -33,7 +58,8 @@ router.post('/login', async (req, res) => {
     try {
         // Fetch user with organization and officer status
         const [rows] = await pool.query(
-            `SELECT u.*, o.is_active as org_is_active, o.name as org_name, oo.status as officer_status
+            `SELECT u.*, o.is_active as org_is_active, o.name as org_name, 
+                    oo.status as officer_status, oo.term_start, oo.term_end
              FROM users u
              LEFT JOIN organizations o ON u.organization_id = o.organization_id
              LEFT JOIN organization_officer oo ON u.id = oo.user_id
@@ -57,11 +83,23 @@ router.post('/login', async (req, res) => {
             }
         }
 
-        // Check if officer account is inactive
+        // Check if officer account is inactive or out of term
         if (user.role === 'Officer') {
             if (user.officer_status === 'Inactive') {
                 return res.status(403).json({ 
                     message: "Login failed: Your officer account is currently inactive. Please contact your administrator." 
+                });
+            }
+
+            const now = new Date();
+            if (user.term_start && now < new Date(user.term_start)) {
+                return res.status(403).json({ 
+                    message: `Login failed: Your term has not yet started. Your access begins on ${new Date(user.term_start).toLocaleDateString()}.` 
+                });
+            }
+            if (user.term_end && now > new Date(user.term_end)) {
+                return res.status(403).json({ 
+                    message: "Login failed: Your term has already expired. Please contact your administrator." 
                 });
             }
         }
@@ -151,12 +189,12 @@ router.post('/reset-password', async (req, res) => {
 router.delete('/users/:id', authenticateToken, authenticateRole("Admin"), async (req, res) => {
     const { id } = req.params
     try {
-        const result = await deleteUser(id)
+        const result = await deleteUserRecursive(id)
         if (!result.affectedRows) return res.status(404).json({ success: false, error: "User not found" })
-        res.json({ success: true, message: "User deleted successfully" })
+        res.json({ success: true, message: "User and all related records deleted successfully" })
     } catch (err) {
         console.error('DELETE /auth/users/:id error:', err)
-        res.status(500).json({ success: false, error: "Server error" })
+        res.status(500).json({ success: false, error: "Server error during deletion" })
     }
 })
 

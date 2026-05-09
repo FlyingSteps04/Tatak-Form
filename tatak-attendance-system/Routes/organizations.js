@@ -2,6 +2,7 @@ import express from 'express'
 import { authenticateToken, authenticateRole } from '../Middleware/authentication.js'
 import { addOrganization, addOrganizationWithId, deleteOrganization, getAllOrganizations, getOrganizationByID, updateOrganization } from '../Database/organizations.js'
 import { addLog } from '../Database/auditLogs.js'
+import { processImage } from '../scripts/imageHelper.js'
 
 const router = express.Router()
 
@@ -11,7 +12,7 @@ router.get('/', authenticateToken, async (req, res) => {
 })
 
 router.post('/', authenticateToken, authenticateRole("Admin"), async (req, res) => {
-    const { organization_id, name, description } = req.body
+    const { organization_id, name, description, logo } = req.body
     if(!name) return res.status(400).json({error: "Organization name is required"})
 
     // Parse custom ID — must be a positive integer if provided
@@ -20,7 +21,10 @@ router.post('/', authenticateToken, authenticateRole("Admin"), async (req, res) 
         return res.status(400).json({ error: "Organization ID must be a positive integer" })
     }
     
-    const result = await addOrganizationWithId(customId, name, description)
+    // Convert base64 to file path if necessary
+    const finalLogo = processImage(logo, 'logos');
+    
+    const result = await addOrganizationWithId(customId, name, description, finalLogo)
     if(!result) return res.status(500).json({error: "Unable to create organization"})
     
     const insertedId = customId || result.insertId
@@ -40,10 +44,13 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin"), async (req, 
 
 router.put('/:id', authenticateToken, authenticateRole("Admin"), async (req, res) => {
     const { id } = req.params
-    const { name, description, is_active } = req.body
+    const { name, description, is_active, logo } = req.body
     if(!name) return res.status(400).json({error: "Organization name is required"})
     
-    const result = await updateOrganization(id, name, description, is_active)
+    // Convert base64 to file path if necessary
+    const finalLogo = processImage(logo, 'logos');
+    
+    const result = await updateOrganization(id, name, description, is_active, finalLogo)
     
     if(!result.affectedRows) return res.status(400).json({error: "Unable to update"})
     

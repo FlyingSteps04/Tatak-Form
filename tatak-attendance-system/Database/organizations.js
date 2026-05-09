@@ -1,31 +1,31 @@
 import { pool } from '../Database/connection.js'
 
 export const getAllOrganizations = async (onlyActive = false) => {
-    const query = onlyActive ? `SELECT * FROM organizations WHERE is_active = 1` : `SELECT * FROM organizations`
+    const query = onlyActive ? `SELECT organization_id, name, description, is_active, logo FROM organizations WHERE is_active = 1` : `SELECT organization_id, name, description, is_active, logo FROM organizations`
     const [rows] = await pool.query(query)
     return rows
 }
 
 export const getOrganizationByID = async (organizationId) => {
-    const query = `SELECT * FROM organizations WHERE organization_id = ?`
+    const query = `SELECT organization_id, name, description, is_active, logo FROM organizations WHERE organization_id = ?`
     const [rows] = await pool.query(query, [organizationId])
     return rows[0]
 }
 
-export const addOrganization = async (name, description) => {
-    const query = `INSERT INTO organizations (name, description) VALUES (?,?)`
-    const [rows] = await pool.query(query, [name, description])
+export const addOrganization = async (name, description, logo = null) => {
+    const query = `INSERT INTO organizations (name, description, logo) VALUES (?,?,?)`
+    const [rows] = await pool.query(query, [name, description, logo])
     return rows
 }
 
 // Allows specifying a custom organization_id; if null/undefined, auto-increment is used
-export const addOrganizationWithId = async (customId, name, description) => {
+export const addOrganizationWithId = async (customId, name, description, logo = null) => {
     if (customId) {
-        const query = `INSERT INTO organizations (organization_id, name, description) VALUES (?,?,?)`
-        const [rows] = await pool.query(query, [customId, name, description])
+        const query = `INSERT INTO organizations (organization_id, name, description, logo) VALUES (?,?,?,?)`
+        const [rows] = await pool.query(query, [customId, name, description, logo])
         return rows
     }
-    return addOrganization(name, description)
+    return addOrganization(name, description, logo)
 }
 
 export const deleteOrganization = async (organizationId) => {
@@ -62,8 +62,8 @@ export const deleteOrganization = async (organizationId) => {
     }
 }
 
-export const updateOrganization = async (organizationId, name, description, is_active) => {
-    const query = `UPDATE organizations SET name = ?, description = ?, is_active = ? WHERE organization_id = ?`
-    const [result] = await pool.query(query, [name, description, is_active === undefined ? 1 : is_active, organizationId])
+export const updateOrganization = async (organizationId, name, description, is_active, logo = null) => {
+    const query = `UPDATE organizations SET name = ?, description = ?, is_active = ?, logo = ? WHERE organization_id = ?`
+    const [result] = await pool.query(query, [name, description, is_active === undefined ? 1 : is_active, logo, organizationId])
     return result
 }
