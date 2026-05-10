@@ -35,18 +35,33 @@
         </aside>
 
         <main class="main-content">
+            <header class="top-bar">
+                <div class="welcome-text">
+                    <h1 id="dynamic-title">Hello, Student</h1>
+                    <p id="dynamic-subtitle">Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026</p>
+                </div>
+                <div class="top-icons">
+                    <div class="notification-wrapper">
+                        <button type="button" class="icon-circle notification-bell" id="notificationBell">
+                            <i class="far fa-bell"></i>
+                            <span class="notification-badge" id="notificationBadge" style="display: none;"></span>
+                        </button>
+                        <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button type="button" class="notification-action-btn" id="markAllRead">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="notification-item"><p class="notification-message">Loading notifications...</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
+                    <div class="icon-circle logout-circle" id="topbarLogout"><i class="fas fa-sign-out-alt"></i></div>
+                </div>
+            </header>
+
             <div id="section-overview" class="dashboard-section">
-                <header class="top-bar">
-                    <div class="welcome-text">
-                        <h1>Hello, Student</h1>
-                        <p>Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026</p>
-                    </div>
-                    <div class="top-icons">
-                        <div class="icon-circle"><i class="far fa-bell"></i></div>
-                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
-                        <div class="icon-circle logout-circle" id="topbarLogout"><i class="fas fa-sign-out-alt"></i></div>
-                    </div>
-                </header>
 
                 <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
@@ -102,17 +117,6 @@
             </div>
 
             <div id="section-events" class="dashboard-section" style="display: none;">
-                <header class="top-bar">
-                    <div class="welcome-text">
-                        <h1>Events</h1>
-                        <p>Discover and participate in university events</p>
-                    </div>
-                    <div class="top-icons">
-                        <div class="icon-circle"><i class="far fa-bell"></i></div>
-                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
-                        <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
-                    </div>
-                </header>
 
                 <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
@@ -142,17 +146,6 @@
                 </div>
             </div>
             <div id="section-history" class="dashboard-section" style="display: none;">
-                <header class="top-bar">
-                    <div class="welcome-text">
-                        <h1>My Attendance History</h1>
-                        <p>Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026</p>
-                    </div>
-                    <div class="top-icons">
-                        <div class="icon-circle"><i class="far fa-bell"></i></div>
-                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
-                        <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
-                    </div>
-                </header>
 
                 <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
@@ -165,7 +158,10 @@
                             <span class="pill absent-pill">1 absent</span>
                             <span class="pill rate-pill">91% rate</span>
                         </div>
-                        <a href="#" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
+                        <div class="history-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="historySearchInput" placeholder="Search events or status...">
+                        </div>
                     </div>
 
                     <div class="history-list">
@@ -205,18 +201,6 @@
                 </div>
             </div>
             <div id="section-reports" class="dashboard-section" style="display: none;">
-                <header class="top-bar">
-                    <div class="welcome-text">
-                        <h1>Attendance Certificates</h1>
-                        <p>Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026</p>
-                    </div>
-                    <div class="top-icons">
-                        <div class="icon-circle"><i class="far fa-bell"></i></div>
-                        <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Student Profile" class="profile-avatar">
-                        <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
-                    </div>
-                </header>
-
                 <div class="action-banner" onclick="window.startQRScan()" style="cursor: pointer;">
                     <i class="fas fa-qrcode"></i> Verify Attendance - Scan QR Code
                 </div>
@@ -309,6 +293,7 @@
             </div>
         </main>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="api-client.js?v=2"></script>
     <script src="student.js?v=2"></script>   
 

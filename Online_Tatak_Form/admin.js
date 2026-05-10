@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const html = '<option value="" disabled selected>Select Organization</option>' + 
                          orgs.map(o => `<option value="${o.organization_id}">${o.name}</option>`).join('');
             
-            ['addEventOrg', 'editEventOrg', 'offOrg', 'editOffOrg'].forEach(id => {
+            ['addEventOrg', 'editEventOrg', 'offOrg', 'editOffOrg', 'addStudentOrg'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = html;
             });
@@ -43,6 +43,179 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById(id);
         if(modal) modal.style.display = 'none';
     };
+
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const notificationList = document.getElementById('notificationList');
+    const markAllReadBtn = document.getElementById('markAllRead');
+    let adminNotificationsCache = { unread: [], read: [] };
+
+    const updateNotificationBadge = () => {
+        if (!notificationBadge) return;
+        const count = adminNotificationsCache.unread.length;
+        if (count > 0) {
+            notificationBadge.innerText = count > 9 ? '9+' : String(count);
+            notificationBadge.style.display = 'inline-flex';
+        } else {
+            notificationBadge.style.display = 'none';
+        }
+    };
+
+    const buildNotificationItem = (notification, unread = false) => {
+        return `
+            <button type="button" class="notification-item ${unread ? 'unread' : ''}" data-id="${notification.notification_id}">
+                <p class="notification-title">${notification.title || 'Notification'}</p>
+                <p class="notification-message">${notification.message || ''}</p>
+                <div class="notification-meta">
+                    <span>${notification.type || 'System'}</span>
+                    <span>${new Date(notification.created_at).toLocaleString()}</span>
+                </div>
+            </button>
+        `;
+    };
+
+    const renderNotifications = () => {
+        if (!notificationList) return;
+        if (markAllReadBtn) {
+            markAllReadBtn.style.display = adminNotificationsCache.unread.length ? 'inline-flex' : 'none';
+        }
+
+        if (!adminNotificationsCache.unread.length && !adminNotificationsCache.read.length) {
+            notificationList.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+            return;
+        }
+
+        let html = '';
+        if (adminNotificationsCache.unread.length) {
+            html += '<div class="notification-section-label">New</div>';
+            html += adminNotificationsCache.unread.map(item => buildNotificationItem(item, true)).join('');
+        }
+        if (adminNotificationsCache.read.length) {
+            html += '<div class="notification-section-label">Earlier</div>';
+            html += adminNotificationsCache.read.map(item => buildNotificationItem(item, false)).join('');
+        }
+
+        notificationList.innerHTML = html;
+        notificationList.querySelectorAll('.notification-item').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const id = button.dataset.id;
+                if (!id) return;
+                await markNotificationRead(id);
+            });
+        });
+    };
+
+    const toggleNotificationDropdown = async () => {
+        if (!notificationDropdown) return;
+        const open = notificationDropdown.style.display === 'block';
+        if (open) {
+            notificationDropdown.style.display = 'none';
+            return;
+        }
+        await loadNotifications();
+        notificationDropdown.style.display = 'block';
+    };
+
+    const hideNotificationDropdown = () => {
+        if (notificationDropdown) notificationDropdown.style.display = 'none';
+    };
+
+    const downloadCertificate = ({ recipient = 'Student', eventName = 'Attendance Event', details = '', certificateId = 'CERT-000', issuer = 'University of Cebu', date = '' } = {}) => {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            console.error('jsPDF library not available');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        doc.setFillColor('#f8fafc');
+        doc.rect(0, 0, pageWidth, 612, 'F');
+        doc.setFontSize(28);
+        doc.setTextColor('#1e3a8a');
+        doc.text('CERTIFICATE OF PARTICIPATION', pageWidth / 2, 120, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setTextColor('#475569');
+        doc.text('This certificate is proudly presented to', pageWidth / 2, 170, { align: 'center' });
+
+        doc.setFontSize(40);
+        doc.setTextColor('#1f2937');
+        doc.setFont('helvetica', 'bold');
+        doc.text(recipient, pageWidth / 2, 230, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`For attending and participating in: ${eventName}`, pageWidth / 2, 280, { align: 'center' });
+        doc.text(`Details: ${details}`, pageWidth / 2, 305, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setTextColor('#4b5563');
+        doc.text(`Certificate ID: ${certificateId}`, pageWidth / 2, 345, { align: 'center' });
+        doc.text(`Issuer: ${issuer}${date ? ` • ${date}` : ''}`, pageWidth / 2, 365, { align: 'center' });
+
+        doc.setDrawColor('#cbd5e1');
+        doc.setLineWidth(1.5);
+        doc.line(80, 450, pageWidth - 80, 450);
+        doc.setFontSize(12);
+        doc.setTextColor('#64748b');
+        doc.text('This certificate is issued by the University of Cebu and is valid for official attendance proof purposes.', pageWidth / 2, 475, { align: 'center' });
+
+        const fileName = `${certificateId.replace(/\s+/g, '_') || 'certificate'}.pdf`;
+        doc.save(fileName);
+    };
+
+    const loadNotifications = async () => {
+        if (!notificationList) return;
+        try {
+            const res = await window.TatakApi.apiRequest('/notifications');
+            adminNotificationsCache.unread = res.unread || [];
+            adminNotificationsCache.read = res.read || [];
+            updateNotificationBadge();
+            renderNotifications();
+        } catch (err) {
+            console.error('Error loading notifications:', err);
+            if (notificationList) notificationList.innerHTML = '<div class="notification-empty">Unable to load notifications.</div>';
+        }
+    };
+
+    const markNotificationRead = async (id) => {
+        try {
+            await window.TatakApi.apiRequest(`/notifications/${id}`, { method: 'PUT' });
+            await loadNotifications();
+        } catch (err) {
+            console.error('Error marking notification read:', err);
+        }
+    };
+
+    const markAllNotificationsRead = async () => {
+        if (!adminNotificationsCache.unread.length) return;
+        try {
+            await Promise.all(adminNotificationsCache.unread.map(notification => window.TatakApi.apiRequest(`/notifications/${notification.notification_id}`, { method: 'PUT' })));
+            await loadNotifications();
+        } catch (err) {
+            console.error('Error marking all notifications read:', err);
+        }
+    };
+
+    if (notificationBell) {
+        notificationBell.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await toggleNotificationDropdown();
+        });
+    }
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await markAllNotificationsRead();
+        });
+    }
+    window.addEventListener('click', (e) => {
+        if (notificationDropdown && notificationDropdown.style.display === 'block' && !notificationDropdown.contains(e.target) && notificationBell && !notificationBell.contains(e.target)) {
+            hideNotificationDropdown();
+        }
+    });
 
     window.formatImageUrl = (url) => {
         if (!url) return '';
@@ -154,6 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
         window.openModal('deleteStudentModal');
+    };
+
+    window.openAddStudentModal = () => {
+        const form = document.getElementById('studentForm');
+        if (form) {
+            form.reset();
+        }
+        window.openModal('addStudentModal');
     };
 
     window.openEditEventModal = (id, name, date, venue, start, end, expected, orgId) => {
@@ -395,13 +576,18 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (section === 'students') {
             mainTitle.innerText = 'Student Directory';
             actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Student';
-            actionBtn.onclick = () => window.TatakApi.showToast('Add Student functionality coming soon', 'info');
+            actionBtn.onclick = () => window.openAddStudentModal();
             renderStudents();
         }
         else if (section === 'reports') {
             mainTitle.innerText = 'System Reports';
             actionBtn.style.display = 'none';
             renderReports();
+        }
+        else if (section === 'audit') {
+            mainTitle.innerText = 'System Audit Logs';
+            actionBtn.style.display = 'none';
+            renderAuditLogs();
         }
     };
 
@@ -551,18 +737,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Right: Top Performing Org Card -->
                     <div class="org-right-side">
-                        <div class="top-performer-card premium-shadow">
-                            <div class="top-label">TOP PERFORMING ORG</div>
-                            <div class="top-org-name" id="top-org-name">...</div>
-                            <div class="top-org-full" id="top-org-full">Loading...</div>
-                            <div class="top-performer-stats">
-                                <div class="top-stat">
-                                    <strong id="top-org-members">0</strong>
-                                    <span>MEMBERS</span>
+                        <div class="top-org-card">
+                            <div class="card-tag">TOP PERFORMING ORG</div>
+                            <div class="org-main-vertical">
+                                <div class="org-logo-wrap" id="top-org-logo-wrap">
+                                    <div class="org-logo-circle">...</div>
                                 </div>
-                                <div class="top-stat">
-                                    <strong id="top-org-attendance">0</strong>
-                                    <span>EVENTS</span>
+                                <h2 class="org-acronym" id="top-org-name">...</h2>
+                                <p class="org-fullname" id="top-org-full">Loading...</p>
+                            </div>
+                            <div class="org-stats-simple">
+                                <div class="org-stat">
+                                    <span class="val" id="top-org-members">0</span>
+                                    <span class="lbl">Members</span>
+                                </div>
+                                <div class="org-stat">
+                                    <span class="val" id="top-org-events">0</span>
+                                    <span class="lbl">Events</span>
                                 </div>
                             </div>
                         </div>
@@ -628,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mainTitle.innerText = 'Students';
         actionBtn.innerText = '+ Add Student';
         actionBtn.style.display = 'block';
-        actionBtn.onclick = () => alert('Add Student functionality coming soon');
+        actionBtn.onclick = () => window.openAddStudentModal();
 
         contentDiv.innerHTML = `
             <div class="students-view">
@@ -700,15 +891,167 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         loadAdminStudentsTable();
     }
-
-    function renderReports() {
+    async function renderReports() {
         contentDiv.innerHTML = `
             <div class="reports-view">
                 <div class="white-container">
-                    <h3>System Analytics</h3>
-                    <p style="padding: 20px; color: #64748b;">Comprehensive reports and analytics dashboard is currently under maintenance. Please check back later.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin: 0;">Attendance Reports</h3>
+                            <p class="report-instruction" style="margin: 5px 0 0;">Download verified PDF reports for university events.</p>
+                        </div>
+                        <div class="header-actions">
+                            <select id="report-org-filter" class="form-control" style="width: 200px; padding: 8px; border-radius: 8px;">
+                                <option value="all">All Organizations</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="reports-list-container">
+                        <p style="text-align: center; padding: 40px; color: #64748b;">Loading events...</p>
+                    </div>
                 </div>
             </div>`;
+
+        // 1. Load Orgs for filter
+        const orgsRes = await window.TatakApi.apiRequest('/organizations');
+        const orgs = orgsRes.data || [];
+        const filter = document.getElementById('report-org-filter');
+        if (filter) {
+            orgs.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.organization_id;
+                opt.textContent = o.name;
+                filter.appendChild(opt);
+            });
+            filter.addEventListener('change', () => loadReportEvents(filter.value));
+        }
+
+        // 2. Load Events
+        await loadReportEvents('all');
+    }
+
+    async function loadReportEvents(orgId) {
+        const container = document.getElementById('reports-list-container');
+        if (!container) return;
+
+        try {
+            const res = await window.TatakApi.apiRequest('/events');
+            let events = res.data || [];
+            
+            if (orgId !== 'all') {
+                events = events.filter(e => String(e.organization_id) === String(orgId));
+            }
+
+            if (events.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #64748b;">No events found for this selection.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => {
+                const dateStr = new Date(event.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const orgName = event.organization_name || 'University Event';
+                const certId = `CERT-${event.event_id}-${new Date(event.start_date).getTime().toString().slice(-4)}`;
+                
+                return `
+                    <div class="cert-row">
+                        <div class="cert-icon-box"><i class="far fa-file-pdf"></i><span>PDF</span></div>
+                        <div class="cert-details">
+                            <h3>${event.name}</h3>
+                            <p>${dateStr} • ${orgName} • ${event.location || 'Main Campus'}</p>
+                            <div class="cert-meta">
+                                <span class="badge-mini">Verified Report</span>
+                                <span class="cert-id">Ref: ${certId}</span>
+                            </div>
+                        </div>
+                        <button class="btn-download" 
+                                data-event-name="${event.name.replace(/'/g, "&apos;")}" 
+                                data-details="${dateStr} • ${orgName}"
+                                data-cert-id="${certId}">Download</button>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.btn-download').forEach(button => {
+                button.addEventListener('click', () => {
+                    const eventName = button.dataset.eventName;
+                    const details = button.dataset.details;
+                    const certificateId = button.dataset.certId;
+                    const recipient = 'System Administrator';
+                    downloadCertificate({ 
+                        recipient, 
+                        eventName, 
+                        details, 
+                        certificateId, 
+                        issuer: 'University of Cebu', 
+                        date: new Date().toLocaleDateString() 
+                    });
+                });
+            });
+        } catch (err) {
+            container.innerHTML = '<p style="text-align: center; padding: 40px; color: #ef4444;">Error loading events.</p>';
+        }
+    }
+
+    function renderAuditLogs() {
+        contentDiv.innerHTML = `
+            <div class="white-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="margin: 0;">System Audit Logs</h3>
+                        <p class="report-instruction" style="margin: 5px 0 0;">Track all administrative actions and system updates.</p>
+                    </div>
+                    <button class="btn-outline" onclick="window.loadAdminAuditLogs()" style="color: #475569; border-color: #e2e8f0;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">TIMESTAMP</th>
+                                <th class="text-center">USER</th>
+                                <th class="text-center">ACTION</th>
+                                <th class="text-center">DETAILS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-audit-table-body">
+                            <tr><td colspan="4" class="text-center">Loading logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+        loadAdminAuditLogs();
+    }
+
+    window.loadAdminAuditLogs = async function() {
+        const tableBody = document.getElementById('admin-audit-table-body');
+        if (!tableBody) return;
+
+        try {
+            const res = await window.TatakApi.apiRequest('/logs');
+            const logs = res.data || [];
+
+            if (logs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding: 20px;">No audit logs found.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = logs.map(log => {
+                const date = new Date(log.timestamp).toLocaleString();
+                const user = log.fname ? `${log.fname}` : `User #${log.user_id}`;
+                const roleLabel = log.role ? ` (${log.role})` : '';
+                const details = log.target_name ? `${log.target_name} (${log.table_name} #${log.record_id})` : `${log.table_name || 'System'} ${log.record_id ? '#' + log.record_id : ''}`;
+                
+                return `
+                    <tr>
+                        <td class="text-center" style="font-size: 13px; color: #64748b;">${date}</td>
+                        <td class="text-center"><span style="font-weight: 600; color: #1e293b;">${user}</span><span style="font-size: 11px; color: #94a3b8;">${roleLabel}</span></td>
+                        <td class="text-center"><span class="badge-mini" style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-weight: 600;">${log.action}</span></td>
+                        <td class="text-center" style="font-size: 13px; color: #475569;">${details}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #ef4444; padding: 20px;">Failed to load logs.</td></tr>';
+        }
     }
 
     // --- DATA LOADING FUNCTIONS ---
@@ -1004,7 +1347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <img src="${orgLogo}" alt="Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                    <img src="${formatImageUrl(orgLogo)}" alt="Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                                     <span style="font-weight: 700; color: #1e293b;">${event.name}</span>
                                 </div>
                             </td>
@@ -1127,19 +1470,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 })[0];
 
                 if (topOrg) {
-                    const topCount = students.filter(s => String(s.organization_id) === String(topOrg.organization_id)).length;
+                    const topStudents = students.filter(s => String(s.organization_id) === String(topOrg.organization_id));
+                    const topOfficers = (usersRes.data || []).filter(u => u.role === 'Officer' && String(u.organization_id) === String(topOrg.organization_id));
+                    const topCount = topStudents.length + topOfficers.length;
                     const topEv = events.filter(e => String(e.organization_id) === String(topOrg.organization_id)).length;
-                    if(document.getElementById('top-org-name')) {
-                        const topNameEl = document.getElementById('top-org-name');
+                    
+                    const logoWrap = document.getElementById('top-org-logo-wrap');
+                    const acronymEl = document.getElementById('top-org-name');
+                    const fullEl = document.getElementById('top-org-full');
+                    const membersEl = document.getElementById('top-org-members');
+                    const eventsEl = document.getElementById('top-org-events');
+
+                    if (logoWrap) {
                         if (topOrg.logo) {
-                            topNameEl.innerHTML = `<img src="${formatImageUrl(topOrg.logo)}" style="width: 100px; height: 100px; object-fit: contain; background: white; border-radius: 12px; padding: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
+                            logoWrap.innerHTML = `<img src="${formatImageUrl(topOrg.logo)}" alt="Logo">`;
                         } else {
-                            topNameEl.innerText = getOrgInitials(topOrg.name);
+                            logoWrap.innerHTML = `<div class="org-logo-circle">${getOrgInitials(topOrg.name)}</div>`;
                         }
                     }
-                    if(document.getElementById('top-org-full')) document.getElementById('top-org-full').innerText = topOrg.name;
-                    if(document.getElementById('top-org-members')) document.getElementById('top-org-members').innerText = topCount;
-                    if(document.getElementById('top-org-attendance')) document.getElementById('top-org-attendance').innerText = topEv;
+                    if (acronymEl) acronymEl.innerText = getOrgInitials(topOrg.name);
+                    if (fullEl) fullEl.innerText = topOrg.name;
+                    if (membersEl) membersEl.innerText = topCount;
+                    if (eventsEl) eventsEl.innerText = topEv;
                 }
             }
         } catch (err) {
@@ -1392,7 +1744,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: #475569; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">${initials}</div>
                             <div style="display: flex; flex-direction: column;">
                                 <strong style="color: #1e293b; font-size: 0.95rem;">${student.fname}</strong>
-                                <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${student.id || '---'}</span>
+                                <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${student.stud_id_number || student.id || '---'}</span>
                             </div>
                         </div>
                     </td>
@@ -1413,7 +1765,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await window.TatakApi.apiRequest('/organizations');
             const orgs = res.data || [];
-            const selects = ['offOrg', 'editOffOrg', 'addEventOrg', 'editEventOrg'];
+            const selects = ['offOrg', 'editOffOrg', 'addEventOrg', 'editEventOrg', 'addStudentOrg'];
             const options = orgs.map(org => `<option value="${org.organization_id}">${org.name}</option>`).join('');
             selects.forEach(id => {
                 const el = document.getElementById(id);
@@ -1681,6 +2033,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const addStudentForm = document.getElementById('studentForm');
+    if (addStudentForm) {
+        addStudentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = addStudentForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+
+            const studentId = document.getElementById('studentIdNumber').value.trim();
+            const firstName = document.getElementById('studentFirstName').value.trim();
+            const lastName = document.getElementById('studentLastName').value.trim();
+            const username = document.getElementById('studentUsername').value.trim();
+            const email = document.getElementById('studentEmail').value.trim();
+            const password = document.getElementById('studentPassword').value;
+            const organizationId = document.getElementById('addStudentOrg').value;
+            const profilePic = document.getElementById('studentProfilePic').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!studentId || !firstName || !lastName || !username || !email || !password || !organizationId) {
+                window.TatakApi.showToast('Please complete all required student fields.', 'error');
+                submitBtn.innerText = 'Save Student';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            if (!emailRegex.test(email)) {
+                window.TatakApi.showToast('Please enter a valid email address.', 'error');
+                submitBtn.innerText = 'Save Student';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const res = await window.TatakApi.apiRequest('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        stud_id_number: studentId,
+                        username,
+                        email,
+                        password,
+                        fname: `${firstName} ${lastName}`,
+                        role: 'Student',
+                        organization_id: parseInt(organizationId, 10),
+                        profile_picture: profilePic,
+                        status: 'Active'
+                    })
+                });
+
+                if (res && res.success) {
+                    window.closeModal('addStudentModal');
+                    addStudentForm.reset();
+                    loadAdminStudentsTable();
+                    window.TatakApi.setPendingToast('Student created successfully!', 'success');
+                    window.TatakApi.showToast('Student created successfully!', 'success');
+                } else {
+                    throw new Error(res.error || 'Failed to create student.');
+                }
+            } catch (err) {
+                console.error('Error creating student:', err);
+                window.TatakApi.showToast('Error: ' + err.message, 'error');
+            } finally {
+                submitBtn.innerText = 'Save Student';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
     // Edit Officer
     const editOfficerForm = document.getElementById('editOfficerForm');
     if (editOfficerForm) {
@@ -1836,6 +2255,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     } else {
         showSection(lastSection);
+    }
+
+    if (typeof loadNotifications === 'function') {
+        loadNotifications();
     }
 
     // Final check for any pending notifications

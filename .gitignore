@@ -1,8 +1,31 @@
+# Dependencies
 node_modules/
+package-lock.json
+
+# Environment/Secrets
 .env
+*.env.local
+
+# IDE/Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Files
 .DS_Store
+Thumbs.db
+
+# Project Specific
+tatak-attendance-system/uploads/
+tatak-attendance-system/qr/
+tatak-attendance-system/Database/*.db
+tatak-attendance-system/Database/*.sqlite
+
+# Build/Dist
 dist/
 build/
 *.log
-tatak-attendance-system/uploads/
-tatak-attendance-system/qr/

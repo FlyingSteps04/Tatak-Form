@@ -48,7 +48,21 @@
                     <p>Friday, March 9, 2026 • 2nd Semester A.Y. 2025–2026</p>
                 </div>
                 <div class="top-icons">
-                    <div class="icon-circle"><i class="far fa-bell"></i></div>
+                    <div class="notification-wrapper" style="position: relative;">
+                        <button type="button" class="icon-circle notification-bell" id="notificationBell" style="position: relative;">
+                            <i class="far fa-bell"></i>
+                            <span class="notification-badge" id="notificationBadge" style="display: none;"></span>
+                        </button>
+                        <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+                            <div class="notification-header">
+                                <h4>Notifications</h4>
+                                <button type="button" class="notification-action-btn" id="markAllRead">Mark all read</button>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="notification-item"><p class="notification-message">Loading notifications...</p></div>
+                            </div>
+                        </div>
+                    </div>
                     <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Profile" class="profile-avatar">
                     <div class="icon-circle logout-circle"><i class="fas fa-sign-out-alt"></i></div>
                 </div>
@@ -372,6 +386,104 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
+        <div class="confirm-modal-content" style="max-width: 400px; text-align: center; padding: 40px 30px;">
+            <div style="width: 70px; height: 70px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 30px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 style="margin-bottom: 10px; color: #1e293b;">Delete Event?</h2>
+            <p style="color: #64748b; margin-bottom: 30px; line-height: 1.5;">This action cannot be undone. All attendance records for this event will be permanently removed.</p>
+            <div class="modal-footer-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <button onclick="closeModal('deleteConfirmModal')" class="btn-cancel-modal" style="width: 100%;">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn-confirm-delete" style="width: 100%; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div id="eventDetailsModal" class="modal-overlay" style="display: none;">
+        <div class="configure-modal" style="max-width: 500px; padding: 40px;">
+            <button class="close-modal-btn" onclick="closeModal('eventDetailsModal')">&times;</button>
+            <div class="modal-header-section" style="margin-bottom: 30px;">
+                <div class="modal-icon-box" style="background: #eff6ff; color: #3b82f6; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="modal-title-text">
+                    <h2 style="font-size: 20px; color: #0f172a;">Event Information</h2>
+                    <p style="color: #64748b; font-size: 13px;">Detailed overview of the selected event session</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="grid-column: span 2;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-tag"></i> Event Name
+                        </label>
+                        <p id="detailsEventName" style="font-size: 17px; font-weight: 700; color: #1e293b;"></p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-calendar-day"></i> Date
+                        </label>
+                        <p id="detailsEventDate" style="font-size: 14px; color: #334155; font-weight: 500;"></p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-clock"></i> Time Window
+                        </label>
+                        <p id="detailsEventTime" style="font-size: 14px; color: #334155; font-weight: 500;"></p>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-map-marker-alt"></i> Venue / Location
+                        </label>
+                        <p id="detailsEventLocation" style="font-size: 14px; color: #334155; font-weight: 500;"></p>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-align-left"></i> Description
+                        </label>
+                        <p id="detailsEventDescription" style="font-size: 14px; color: #64748b; line-height: 1.6; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #f1f5f9;"></p>
+                    </div>
+                    <div style="grid-column: span 2; background: linear-gradient(to right, #eff6ff, #ffffff); padding: 20px; border-radius: 16px; border: 1.5px solid #dbeafe; margin-top: 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-size: 13px; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-chart-line"></i> Attendance Pulse
+                            </span>
+                            <span id="detailsAttendancePercent" style="font-size: 15px; font-weight: 900; color: #2563eb;">0%</span>
+                        </div>
+                        <div style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; margin-bottom: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                            <div id="detailsProgressBar" style="width: 0%; height: 100%; background: linear-gradient(to right, #3b82f6, #2563eb); transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+                        </div>
+                        <p id="detailsAttendanceCounts" style="font-size: 12px; color: #475569; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-user-check" style="color: #10b981;"></i> 0 / 0 total participants confirmed
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top: 40px;">
+                <button class="btn-open-now" style="width: 100%; grid-column: span 2; padding: 16px; font-size: 15px; letter-spacing: 0.5px;" onclick="closeModal('eventDetailsModal')">Return to Overview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Event Confirmation Modal -->
+    <div id="closeEventModal" class="modal-overlay" style="display: none;">
+        <div class="confirm-modal-content" style="max-width: 420px; text-align: center; padding: 45px 35px;">
+            <div style="width: 75px; height: 75px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 32px; border: 4px solid #fecaca;">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <h2 style="margin-bottom: 12px; color: #0f172a; font-weight: 800;">Close Attendance?</h2>
+            <p style="color: #64748b; margin-bottom: 35px; line-height: 1.6; font-size: 15px;">Ending this session will permanently stop students from scanning in. Are you sure you're finished?</p>
+            <div class="modal-footer-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <button onclick="closeModal('closeEventModal')" class="btn-cancel-modal" style="width: 100%; padding: 14px; font-weight: 700; border-radius: 12px;">Go Back</button>
+                <button id="confirmCloseEventBtn" class="btn-confirm-save" style="width: 100%; background: #ef4444; border: none; padding: 14px; border-radius: 12px; color: white; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); transition: all 0.2s;">Close Session</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="api-client.js?v=2"></script>
     <script src="officer.js?v=2"></script>
 </body>

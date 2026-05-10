@@ -67,3 +67,18 @@ export const updateOrganization = async (organizationId, name, description, is_a
     const [result] = await pool.query(query, [name, description, is_active === undefined ? 1 : is_active, logo, organizationId])
     return result
 }
+
+export const getTopOrganization = async () => {
+    const query = `
+        SELECT o.*, 
+               ((SELECT COUNT(*) FROM users u WHERE u.organization_id = o.organization_id AND u.role = 'Student') +
+                (SELECT COUNT(*) FROM users u2 WHERE u2.organization_id = o.organization_id AND u2.role = 'Officer')) as members_count,
+               (SELECT COUNT(*) FROM events e WHERE e.organization_id = o.organization_id) as events_count
+        FROM organizations o
+        WHERE o.is_active = 1
+        ORDER BY events_count DESC, members_count DESC
+        LIMIT 1
+    `;
+    const [rows] = await pool.query(query);
+    return rows[0];
+}

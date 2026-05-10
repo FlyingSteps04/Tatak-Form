@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmBtn = document.getElementById('confirmLogout');
     const sidebarLogout = document.getElementById('sidebarLogout');
     const topbarLogout = document.querySelector('.logout-circle');
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const notificationList = document.getElementById('notificationList');
+    const markAllReadBtn = document.getElementById('markAllRead');
+    let officerNotificationsCache = { unread: [], read: [] };
 
     // Updated button references for the new Add Event modal
     const closeOfficerEventTopBtn = document.getElementById('closeOfficerEventTopBtn');
@@ -84,7 +90,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const profileAvatar = document.querySelector('.profile-avatar');
 
             if (nameEl && profile.fname) nameEl.textContent = profile.fname;
-            if (roleEl && profile.role) roleEl.textContent = profile.role;
+            const dynamicTitle = document.getElementById('dynamic-title');
+            if (dynamicTitle && profile.fname) {
+                dynamicTitle.innerHTML = `HELLO, <span class="highlight">${profile.fname.toUpperCase()}</span>`;
+            }
+            if (roleEl) {
+                const orgName = profile.organization_name || profile.org_name || '';
+                const position = profile.position || profile.role || 'Officer';
+                roleEl.textContent = orgName ? `${orgName} - ${position}` : position;
+            }
             
             if (profile.profile_picture) {
                 const fullPicUrl = formatImageUrl(profile.profile_picture);
@@ -143,6 +157,267 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s === 'excused') return 'Excused';
         return 'Present';
     }
+
+    const updateNotificationBadgeUI = () => {
+        if (!notificationBadge) return;
+        const count = officerNotificationsCache.unread.length;
+        if (count > 0) {
+            notificationBadge.innerText = count > 9 ? '9+' : String(count);
+            notificationBadge.style.display = 'inline-flex';
+        } else {
+            notificationBadge.style.display = 'none';
+        }
+    };
+
+    const buildNotificationItem = (notification, unread = false) => {
+        return `
+            <button type="button" class="notification-item ${unread ? 'unread' : ''}" data-id="${notification.notification_id}">
+                <p class="notification-title">${notification.title || 'Notification'}</p>
+                <p class="notification-message">${notification.message || ''}</p>
+                <div class="notification-meta">
+                    <span>${notification.type || 'System'}</span>
+                    <span>${new Date(notification.created_at).toLocaleString()}</span>
+                </div>
+            </button>
+        `;
+    };
+
+    const renderOfficerNotifications = () => {
+        if (!notificationList) return;
+        if (markAllReadBtn) {
+            markAllReadBtn.style.display = officerNotificationsCache.unread.length ? 'inline-flex' : 'none';
+        }
+
+        if (!officerNotificationsCache.unread.length && !officerNotificationsCache.read.length) {
+            notificationList.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+            return;
+        }
+
+        let html = '';
+        if (officerNotificationsCache.unread.length) {
+            html += '<div class="notification-section-label">New</div>';
+            html += officerNotificationsCache.unread.map(item => buildNotificationItem(item, true)).join('');
+        }
+        if (officerNotificationsCache.read.length) {
+            html += '<div class="notification-section-label">Earlier</div>';
+            html += officerNotificationsCache.read.map(item => buildNotificationItem(item, false)).join('');
+        }
+
+        notificationList.innerHTML = html;
+        notificationList.querySelectorAll('.notification-item').forEach(button => {
+            button.addEventListener('click', async () => {
+                const id = button.dataset.id;
+                if (!id) return;
+                await markOfficerNotificationRead(id);
+            });
+        });
+    };
+
+    const hideOfficerNotifications = () => {
+        if (notificationDropdown) notificationDropdown.style.display = 'none';
+    };
+
+    const toggleOfficerNotifications = async () => {
+        if (!notificationDropdown) return;
+        const isOpen = notificationDropdown.style.display === 'block';
+        if (isOpen) {
+            hideOfficerNotifications();
+            return;
+        }
+        await loadOfficerNotifications();
+        notificationDropdown.style.display = 'block';
+    };
+
+    const loadOfficerNotifications = async () => {
+        if (!notificationList) return;
+        try {
+            const res = await window.TatakApi.apiRequest('/notifications');
+            officerNotificationsCache.unread = res.unread || [];
+            officerNotificationsCache.read = res.read || [];
+            updateNotificationBadgeUI();
+            renderOfficerNotifications();
+        } catch (err) {
+            console.error('Error loading officer notifications:', err);
+            if (notificationList) notificationList.innerHTML = '<div class="notification-empty">Unable to load notifications.</div>';
+        }
+    };
+
+    const markOfficerNotificationRead = async (id) => {
+        try {
+            await window.TatakApi.apiRequest(`/notifications/${id}`, { method: 'PUT' });
+            await loadOfficerNotifications();
+        } catch (err) {
+            console.error('Failed to mark notification read:', err);
+        }
+    };
+
+    const markAllOfficerNotificationsRead = async () => {
+        if (!officerNotificationsCache.unread.length) return;
+        try {
+            await Promise.all(officerNotificationsCache.unread.map(notification => window.TatakApi.apiRequest(`/notifications/${notification.notification_id}`, { method: 'PUT' })));
+            await loadOfficerNotifications();
+        } catch (err) {
+            console.error('Failed to mark all notifications read:', err);
+        }
+    };
+
+    /**
+     * Loads and renders dynamic reports for the officer's organization.
+     */
+    async function loadOfficerReports() {
+        const container = document.getElementById('section-reports');
+        if (!container) return;
+
+        // Create inner container if it doesn't exist to match design
+        let listContainer = container.querySelector('.white-container');
+        if (!listContainer) {
+            container.innerHTML = `<div class="white-container">
+                <div style="margin-bottom: 25px;">
+                    <h3 style="margin: 0; color: #1e293b;">Organization Reports</h3>
+                    <p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">Download attendance summaries for your events.</p>
+                </div>
+                <div id="officer-reports-list">
+                    <p style="text-align: center; padding: 40px; color: #94a3b8;">Loading events...</p>
+                </div>
+            </div>`;
+            listContainer = container.querySelector('#officer-reports-list');
+        } else {
+            // If it already has the structure, just target the list
+            listContainer = document.getElementById('officer-reports-list') || listContainer;
+        }
+
+        try {
+            const res = await window.TatakApi.apiRequest('/events');
+            const allEvents = Array.isArray(res.data) ? res.data : [];
+            const events = filterByOfficerOrg(allEvents);
+
+            if (events.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #94a3b8;">No events found for your organization.</p>';
+                return;
+            }
+
+            listContainer.innerHTML = events.map(event => {
+                const dateStr = new Date(event.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const certId = `REP-${event.event_id}-${new Date(event.start_date).getTime().toString().slice(-4)}`;
+                
+                return `
+                    <div class="cert-row" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid #f1f5f9; gap: 20px;">
+                        <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                            <i class="far fa-file-pdf"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: #1e293b; font-size: 16px;">${event.name}</h4>
+                            <p style="margin: 4px 0; color: #64748b; font-size: 13px;">${dateStr} • ${event.location || 'TBA'}</p>
+                            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                <span class="badge-mini" style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Attendance Summary</span>
+                                <span style="font-size: 11px; color: #94a3b8;">ID: ${certId}</span>
+                            </div>
+                        </div>
+                        <button class="btn-download-record" 
+                                data-event-name="${event.name.replace(/'/g, "&apos;")}" 
+                                data-details="${dateStr} • ${event.location || 'Main Campus'}"
+                                data-cert-id="${certId}"
+                                style="background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Download</button>
+                    </div>
+                `;
+            }).join('');
+
+            listContainer.querySelectorAll('.btn-download-record').forEach(button => {
+                button.addEventListener('click', () => {
+                    const eventName = button.dataset.eventName;
+                    const details = button.dataset.details;
+                    const certificateId = button.dataset.certId;
+                    const recipient = document.querySelector('.officer-name')?.innerText || 'Officer';
+                    downloadCertificate({ 
+                        recipient, 
+                        eventName, 
+                        details, 
+                        certificateId, 
+                        issuer: 'University of Cebu', 
+                        date: new Date().toLocaleDateString() 
+                    });
+                });
+            });
+        } catch (err) {
+            listContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #ef4444;">Error loading events.</p>';
+        }
+    }
+
+    const downloadCertificate = ({ recipient = 'Officer', eventName = 'Attendance Event', details = '', certificateId = 'CERT-000', issuer = 'University of Cebu', date = '' } = {}) => {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            console.error('jsPDF library not available');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        doc.setFillColor('#f8fafc');
+        doc.rect(0, 0, pageWidth, 612, 'F');
+        doc.setFontSize(28);
+        doc.setTextColor('#1e3a8a');
+        doc.text('CERTIFICATE OF PARTICIPATION', pageWidth / 2, 120, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setTextColor('#475569');
+        doc.text('This certificate is proudly presented to', pageWidth / 2, 170, { align: 'center' });
+
+        doc.setFontSize(40);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor('#1f2937');
+        doc.text(recipient, pageWidth / 2, 230, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`For attending and participating in: ${eventName}`, pageWidth / 2, 280, { align: 'center' });
+        doc.text(`Details: ${details}`, pageWidth / 2, 305, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setTextColor('#4b5563');
+        doc.text(`Certificate ID: ${certificateId}`, pageWidth / 2, 345, { align: 'center' });
+        doc.text(`Issuer: ${issuer}${date ? ` • ${date}` : ''}`, pageWidth / 2, 365, { align: 'center' });
+
+        doc.setDrawColor('#cbd5e1');
+        doc.setLineWidth(1.5);
+        doc.line(80, 450, pageWidth - 80, 450);
+        doc.setFontSize(12);
+        doc.setTextColor('#64748b');
+        doc.text('This certificate is issued by the University of Cebu and is valid for official attendance proof purposes.', pageWidth / 2, 475, { align: 'center' });
+
+        const fileName = `${certificateId.replace(/\s+/g, '_') || 'certificate'}.pdf`;
+        doc.save(fileName);
+    };
+
+    const setupOfficerCertificateButtons = () => {
+        document.querySelectorAll('.btn-download-record, .btn-generate-new, .btn-generate-main').forEach(button => {
+            button.addEventListener('click', () => {
+                const row = button.closest('.record-item');
+                const title = row?.querySelector('h4')?.innerText || 'Event Attendance';
+                const details = row?.querySelector('p')?.innerText || '';
+                const certificateId = `CERT-${new Date().getTime()}`;
+                const recipient = document.querySelector('.top-bar .welcome-text h1')?.innerText.replace('Hello,', '').trim() || 'Officer';
+                downloadCertificate({ recipient, eventName: title, details, certificateId, issuer: 'University of Cebu', date: new Date().toLocaleDateString() });
+            });
+        });
+    };
+
+    if (notificationBell) {
+        notificationBell.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await toggleOfficerNotifications();
+        });
+    }
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await markAllOfficerNotificationsRead();
+        });
+    }
+    window.addEventListener('click', (e) => {
+        if (notificationDropdown && notificationDropdown.style.display === 'block' && !notificationDropdown.contains(e.target) && notificationBell && !notificationBell.contains(e.target)) {
+            hideOfficerNotifications();
+        }
+    });
 
     /**
      * Gets the first letter(s) of a name for the avatar circle.
@@ -319,10 +594,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const allEvents = Array.isArray(eventsRes.data) ? eventsRes.data : [];
             const events = filterByOfficerOrg(allEvents);
             
-            // 2. Fetch students confirmed (from attendance summary if exists, or fallback to an estimate/fetch)
-            const attendanceRes = await window.TatakApi.apiRequest('/attendance/summary').catch(() => ({ data: [] }));
-            const attendance = Array.isArray(attendanceRes.data) ? attendanceRes.data : [];
-            const totalStudentsConfirmed = attendance.filter(a => a.status === 'Present' || a.status === 'Late').length || 0;
+            // 2. Fetch students confirmed — filtered to officer's org
+            let totalStudentsConfirmed = 0;
+            if (_officerOrgId) {
+                const summaryRes = await window.TatakApi.apiRequest(`/attendance/summary/org/${_officerOrgId}`).catch(() => ({ data: {} }));
+                const summary = summaryRes.data || {};
+                totalStudentsConfirmed = (Number(summary.present_count) || 0) + (Number(summary.late_count) || 0);
+            }
 
             // Stats Grid
             document.getElementById('officer-overview-total-events').innerText = events.length;
@@ -349,6 +627,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 3. Populate Live Hero Card
             const heroCard = document.getElementById('officer-overview-hero-card');
             const targetLiveEvent = activeEvents[0] || upcomingEvents[0];
+            // SILENT RELOAD: Don't show loading spinner if we already have content
+            const hasExistingContent = heroCard && heroCard.innerHTML.trim() !== '';
             
             if (targetLiveEvent && heroCard) {
                 heroCard.style.display = 'block';
@@ -396,6 +676,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (totalEl) totalEl.innerText = expected > 0 ? `/${expected}` : '/--';
                     if (fillEl) fillEl.style.width = `${percent}%`;
                     if (metaEl) metaEl.innerText = expected > 0 ? `${percent}% of expected attendance reached` : 'Expected attendance not set';
+
+                    // Attach button listeners
+                    const detailsBtn = heroCard.querySelector('.btn-time-limit');
+                    const closeBtn = heroCard.querySelector('.btn-close-live');
+
+                    if (detailsBtn) {
+                        detailsBtn.onclick = () => {
+                            window.openEventDetails({
+                                ...targetLiveEvent,
+                                attendancePercent: percent,
+                                presentCount: presentCount
+                            });
+                        };
+                    }
+                    if (closeBtn) {
+                        closeBtn.onclick = () => {
+                            window.openCloseEventConfirmation(targetLiveEvent.event_id || targetLiveEvent.id);
+                        };
+                    }
                 } catch (e) {
                     const metaEl = heroCard.querySelector('.hero-progress-meta');
                     if (metaEl) metaEl.innerText = 'Attendance data unavailable';
@@ -540,8 +839,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    /**
+     * Switches the dashboard to a specific section and persists the state.
+     */
+    window.showSection = (id) => {
+        if (!navMapping[id]) return;
+
+        resetNavigation();
+
+        const navBtn = document.getElementById(id);
+        if (navBtn) navBtn.classList.add('active');
+
+        const sectionId = navMapping[id].section;
+        const section = document.getElementById(sectionId);
+        if (section) section.style.display = 'block';
+
+        const sectionTitle = navMapping[id].title;
+        if (dynamicTitle) {
+            if (id === 'nav-overview') {
+                const nameEl = document.querySelector('.officer-name');
+                const name = nameEl ? nameEl.textContent.trim().toUpperCase() : '';
+                dynamicTitle.innerHTML = name ? `HELLO, <span class="highlight">${name}</span>` : sectionTitle;
+            } else {
+                dynamicTitle.textContent = sectionTitle;
+            }
+        }
+
+        // Persist the current section
+        localStorage.setItem('officer_last_section', id);
+
+        // Load section-specific data
+        if (id === 'nav-attendance') {
+            loadEventsIntoSelector();
+        } else if (id === 'nav-overview') {
+            loadOfficerOverview();
+        } else if (id === 'nav-events') {
+            loadManageEvents();
+        } else if (id === 'nav-reports') {
+            loadOfficerReports();
+        }
+    };
+
     // Initial authentication check then profile load.
     ensureOfficerAuthenticated();
+    
+    // Hide all sections immediately to prevent flash before state restoration
+    resetNavigation();
+    
     // Load officer profile early so _officerOrgId is ready before any event fetches.
     loadOfficerProfile();
     
@@ -592,19 +936,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         loadEventAttendance(eventSelect.value);
                     }
                     
-                    // Show success notification for attendance
-                    const successModal = document.getElementById('successModal');
-                    if (successModal) {
-                        document.getElementById('successModalTitle').textContent = 'Attendance Updated';
-                        document.getElementById('successModalMessage').textContent = 'The student status has been successfully updated.';
-                        openModal(successModal);
-                    }
+                    // Show success notification after a tiny delay
+                    setTimeout(() => {
+                        const successModal = document.getElementById('successModal');
+                        if (successModal) {
+                            document.getElementById('successModalTitle').textContent = 'Attendance Updated';
+                            document.getElementById('successModalMessage').textContent = 'The student status has been successfully updated.';
+                            openModal(successModal);
+                        }
+                    }, 100);
                 } else {
-                    alert('Failed to update attendance: ' + (res.error || 'Unknown error'));
+                    window.TatakApi.showToast(res.error || 'Failed to update attendance', 'error');
                 }
             } catch (err) {
                 console.error('Error updating attendance:', err);
-                alert('An error occurred while updating attendance.');
+                window.TatakApi.showToast('An error occurred while updating attendance.', 'error');
             } finally {
                 confirmEditBtn.innerHTML = 'Update Attendance';
                 confirmEditBtn.disabled = false;
@@ -612,28 +958,144 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.openModal = (modalElement) => {
+    /**
+     * Helper to open any modal by element or ID.
+     */
+    function openModal(modalElement) {
         if (typeof modalElement === 'string') modalElement = document.getElementById(modalElement);
         if (modalElement) {
             modalElement.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
-    };
+    }
+    window.openModal = openModal;
 
-    window.closeModal = (modalElement) => {
+    /**
+     * Helper to close any modal by element or ID.
+     */
+    function closeModal(modalElement) {
         if (typeof modalElement === 'string') modalElement = document.getElementById(modalElement);
         if (modalElement) {
             modalElement.style.display = 'none';
             document.body.style.overflow = 'auto';
         }
+    }
+    window.closeModal = closeModal;
+
+    /**
+     * Unified helper to show the Success Modal with custom content.
+     */
+    function showSuccessModal(title, message) {
+        const successModal = document.getElementById('successModal');
+        const successTitle = document.getElementById('successModalTitle');
+        const successMsg = document.getElementById('successModalMessage');
+        
+        if (successModal) {
+            if (successTitle) successTitle.textContent = title;
+            if (successMsg) successMsg.textContent = message;
+            openModal(successModal);
+        } else {
+            window.TatakApi.showToast(title, 'success');
+        }
+    }
+    window.showSuccessModal = showSuccessModal;
+
+    /**
+     * Checks for any pending success modals from a previous page session (reload-resilience).
+     */
+    function checkPendingSuccessModal() {
+        const pending = sessionStorage.getItem('officer_pending_success');
+        if (pending) {
+            try {
+                const { title, message } = JSON.parse(pending);
+                sessionStorage.removeItem('officer_pending_success');
+                // Show after a delay to ensure initial section loading doesn't interfere
+                setTimeout(() => showSuccessModal(title, message), 600);
+            } catch (e) {
+                sessionStorage.removeItem('officer_pending_success');
+            }
+        }
+    }
+
+    /**
+     * Opens the detailed view for an event from the hero card.
+     */
+    window.openEventDetails = (eventData) => {
+        const modal = document.getElementById('eventDetailsModal');
+        if (!modal) return;
+
+        document.getElementById('detailsEventName').textContent = eventData.name || 'Unnamed Event';
+        
+        const dateObj = new Date(eventData.start_date);
+        document.getElementById('detailsEventDate').textContent = dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        const startTime = eventData.start_time || (eventData.start_date ? new Date(eventData.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00');
+        const endTime = eventData.end_time || (eventData.end_date ? new Date(eventData.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00');
+        document.getElementById('detailsEventTime').textContent = `${startTime} - ${endTime}`;
+        
+        document.getElementById('detailsEventLocation').textContent = eventData.location || 'No location specified';
+        document.getElementById('detailsEventDescription').textContent = eventData.description || 'No description available for this event.';
+
+        // Populate attendance stats if available
+        const percent = eventData.attendancePercent || 0;
+        const present = eventData.presentCount || 0;
+        const expected = eventData.expected_attendance || 0;
+
+        document.getElementById('detailsAttendancePercent').textContent = `${percent}%`;
+        document.getElementById('detailsProgressBar').style.width = `${percent}%`;
+        document.getElementById('detailsAttendanceCounts').innerHTML = `<i class="fas fa-users" style="font-size: 10px;"></i> ${present} / ${expected} expected attendees confirmed`;
+
+        openModal(modal);
+    };
+
+    /**
+     * Opens the confirmation modal to close an event.
+     */
+    window.openCloseEventConfirmation = (eventId) => {
+        const modal = document.getElementById('closeEventModal');
+        const confirmBtn = document.getElementById('confirmCloseEventBtn');
+        if (!modal || !confirmBtn) return;
+
+        // Clone and replace button to remove old listeners
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+
+        newBtn.addEventListener('click', async () => {
+            newBtn.disabled = true;
+            newBtn.innerText = 'Closing...';
+            
+            try {
+                // To "close" an event, we update its end_date to now
+                const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                const res = await window.TatakApi.apiRequest(`/events/${eventId}/close`, {
+                    method: 'PATCH'
+                });
+
+                closeModal(modal);
+                
+                if (res.success) {
+                    showSuccessModal('Attendance Closed', 'The event attendance has been successfully ended.');
+                    loadOfficerOverview();
+                    loadManageEvents(true);
+                } else {
+                    window.TatakApi.showToast(res.error || 'Failed to close event', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                window.TatakApi.showToast('An error occurred.', 'error');
+                closeModal(modal);
+            }
+        });
+
+        openModal(modal);
     };
 
     /**
      * Loads and renders events for the "Manage Events" tab.
      */
-    async function loadManageEvents() {
+    async function loadManageEvents(isSilent = false) {
         if (!officerEventsGrid) return;
-        officerEventsGrid.innerHTML = '<p style="color: #64748b;">Loading events...</p>';
+        if (!isSilent) officerEventsGrid.innerHTML = '<p style="color: #64748b; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading events...</p>';
 
         try {
             const data = await window.TatakApi.apiRequest('/events');
@@ -679,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
                                     <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
-                                    <button class="icon-delete" onclick="alert('Delete functionality coming soon')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
+                                    <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -714,6 +1176,66 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal(officerEventModal);
     };
 
+    window.deleteOfficerEvent = (eventId) => {
+        const modal = document.getElementById('deleteConfirmModal');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (!modal || !confirmBtn) {
+            // Fallback to native if modal missing
+            if (confirm('Are you sure you want to delete this event?')) {
+                performDeletion(eventId);
+            }
+            return;
+        }
+
+        openModal(modal);
+        
+        // Remove old listeners to avoid multiple deletions
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        newConfirmBtn.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Prevent bubbling to window backdrop handlers
+            newConfirmBtn.disabled = true;
+            newConfirmBtn.innerText = 'Deleting...';
+            
+            // Close confirm modal first to avoid overlapping transitions
+            closeModal(modal);
+            
+            await performDeletion(eventId);
+        });
+    };
+
+    async function performDeletion(eventId) {
+        try {
+            const response = await window.TatakApi.apiRequest(`/events/${eventId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.success) {
+                // Set pending success modal for reload-resilience
+                sessionStorage.setItem('officer_pending_success', JSON.stringify({
+                    title: 'Event Deleted',
+                    message: 'The event and all associated records have been successfully removed.'
+                }));
+
+                // Fallback for immediate display if no reload happens
+                showSuccessModal('Event Deleted', 'The event and all associated records have been successfully removed.');
+                
+                // Refresh data
+                setTimeout(() => {
+                    loadManageEvents(true);
+                    loadOfficerOverview();
+                }, 500);
+            } else {
+                window.TatakApi.showToast(response.error || 'Failed to delete event', 'error');
+            }
+        } catch (err) {
+            console.error('Error deleting event:', err);
+            window.TatakApi.showToast('An error occurred during deletion', 'error');
+        }
+    }
+
     if (sidebarLogout) sidebarLogout.addEventListener('click', () => openModal(logoutModal));
     if (topbarLogout) topbarLogout.addEventListener('click', () => openModal(logoutModal));
     if (stayBtn) stayBtn.addEventListener('click', () => closeModal(logoutModal));
@@ -725,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = document.getElementById('qrModalEventName');
         
         if (!qrUrl) {
-            alert('QR code not generated for this event yet.');
+            window.TatakApi.showToast('QR code not generated for this event yet.', 'info');
             return;
         }
 
@@ -810,25 +1332,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.success) {
                     closeModal(officerEventModal);
                     officerEventForm.reset();
-                    loadManageEvents(); // Refresh the grid
-                    
-                    // Show Success Modal
-                    const successModal = document.getElementById('successModal');
-                    const successTitle = document.getElementById('successModalTitle');
-                    const successMsg = document.getElementById('successModalMessage');
-                    if (successModal) {
-                        successTitle.textContent = eventId ? 'Event Updated' : 'Event Created';
-                        successMsg.textContent = eventId ? 
-                            'The event details have been successfully updated.' : 
-                            'Your new event has been submitted and is awaiting approval.';
-                        openModal(successModal);
-                    }
+
+                    const title = eventId ? 'Event Updated' : 'Event Created';
+                    const msg = eventId ?
+                        'The event details have been successfully updated.' :
+                        'Your new event has been submitted and is awaiting approval.';
+
+                    // Set pending success modal for reload-resilience
+                    sessionStorage.setItem('officer_pending_success', JSON.stringify({
+                        title: title,
+                        message: msg
+                    }));
+
+                    // Show Success Modal after a tiny delay for clean transition
+                    setTimeout(() => {
+                        showSuccessModal(title, msg);
+                        
+                        // Refresh data silently
+                        setTimeout(() => {
+                            loadManageEvents(true);
+                            loadOfficerOverview();
+                        }, 500);
+                    }, 100);
                 } else {
-                    alert(`Error: ${response.error || 'Could not save event'}`);
+                    window.TatakApi.showToast(response.error || 'Could not save event', 'error');
                 }
             } catch (err) {
                 console.error('Submission failed:', err);
-                alert('An error occurred while saving the event.');
+                window.TatakApi.showToast('An error occurred while saving the event.', 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
@@ -861,44 +1392,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // Global click handler for closing modals by clicking outside.
     window.addEventListener('click', (e) => {
+        // Close logout modal when clicking on backdrop
         if (e.target === logoutModal) closeModal(logoutModal);
+        
+        // Close officer event modal when clicking on backdrop
         if (e.target === officerEventModal) closeModal(officerEventModal);
+    });
+
+    // Prevent modal content clicks from bubbling up to avoid conflicts
+    document.addEventListener('click', (e) => {
+        const successModal = document.getElementById('successModal');
+        if (successModal && successModal.contains(e.target)) {
+            const modalContent = successModal.querySelector('.confirm-modal-content');
+            if (modalContent && modalContent.contains(e.target)) {
+                e.stopPropagation();
+            }
+        }
     });
 
     Object.keys(navMapping).forEach(id => {
         const navBtn = document.getElementById(id);
         if (navBtn) {
-            navBtn.addEventListener('click', () => {
-                resetNavigation();
-
-                navBtn.classList.add('active');
-
-                const sectionId = navMapping[id].section;
-                const section = document.getElementById(sectionId);
-                if (section) section.style.display = 'block';
-
-                if (dynamicTitle) dynamicTitle.textContent = navMapping[id].title;
-
-                // When the tabs are opened, load their specific data
-                if (id === 'nav-attendance') {
-                    loadEventsIntoSelector();
-                } else if (id === 'nav-overview') {
-                    loadOfficerOverview();
-                } else if (id === 'nav-events') {
-                    loadManageEvents();
-                }
+            navBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection(id);
             });
         }
     });
 
-    // Initial Overview Load — run after profile resolves so org filtering is ready
-    const activeNav = document.querySelector('.nav-item.active');
-    if (activeNav && activeNav.id === 'nav-overview') {
-        loadOfficerProfile().then(() => loadOfficerOverview());
+    // Initial Section Load — respects persistence or defaults to Overview
+    loadOfficerProfile().then(async () => {
+        const lastSection = localStorage.getItem('officer_last_section') || 'nav-overview';
+        showSection(lastSection);
+        
+        if (typeof loadOfficerNotifications === 'function') {
+            await loadOfficerNotifications();
+        }
+
+        // Check for reload-resilient success modals
+        checkPendingSuccessModal();
+    });
+    if (typeof setupOfficerCertificateButtons === 'function') {
+        setupOfficerCertificateButtons();
     }
     // Check for pending notifications
     if (window.TatakApi && window.TatakApi.checkPendingToast) {
         window.TatakApi.checkPendingToast();
     }
-});
+});

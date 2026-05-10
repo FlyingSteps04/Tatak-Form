@@ -48,8 +48,8 @@ async function apiRequest(path, options = {}) {
         headers,
     });
 
-    // Auto-logout if the token is missing/expired/invalid.
-    if (response.status === 401 || response.status === 403) {
+    // Auto-logout if the token is missing/expired/invalid, unless skipRedirect is true.
+    if ((response.status === 401 || response.status === 403) && !options.skipRedirect) {
         clearAuthAndRedirect();
         throw new Error('Unauthorized');
     }

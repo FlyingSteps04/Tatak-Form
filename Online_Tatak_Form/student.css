@@ -1,4 +1,177 @@
+/* --- NOTIFICATION SYSTEM --- */
+.notification-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.notification-bell {
+    position: relative;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.notification-bell:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: white;
+    background: #ef4444;
+    border-radius: 999px;
+    line-height: 1;
+    border: 2px solid white;
+}
+
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 12px);
+    min-width: 320px;
+    width: 350px;
+    max-height: 480px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+
+.notification-header h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.notification-action-btn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.notification-action-btn:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.notification-list {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    width: 100%;
+    background: white;
+    border: none;
+    text-align: left;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: block;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-item.unread {
+    background: #f0f7ff;
+    position: relative;
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: #3b82f6;
+    border-radius: 50%;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    color: #1e293b;
+}
+
+.notification-message {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #64748b;
+}
+
+.notification-meta {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+}
+
+.notification-empty {
+    padding: 40px 20px;
+    color: #94a3b8;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.notification-section-label {
+    padding: 12px 20px 6px 20px;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    background: #f8fafc;
+}
+
 /* --- Global Styles --- */
+
 :root {
     --sidebar-bg: #121c43; 
     --main-bg: #f4f7fe;
@@ -364,7 +537,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;                /* Ensures it sits on top of everything */
+    z-index: 2000;                /* Ensures it sits on top of everything */
 }
 
 /* --- Modal Card --- */
@@ -568,11 +741,41 @@ body {
 .absent-pill { background: #fff1f0; color: #ff4d4f; }
 .rate-pill { background: #e6f0ff; color: #1890ff; border: 1px solid #91d5ff; }
 
-.view-all {
-    text-decoration: none;
-    color: #1a237e;
+.history-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f4f7fe;
+    border-radius: 12px;
+    padding: 0 15px;
+    width: 250px;
+    border: 1px solid #e0e5f2;
+    transition: all 0.2s ease;
+}
+
+.history-search:focus-within {
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.history-search i {
+    color: #a3aed0;
+    font-size: 14px;
+}
+
+.history-search input {
+    border: none;
+    background: transparent;
+    padding: 10px;
     font-size: 13px;
-    font-weight: 700;
+    color: #1b2559;
+    width: 100%;
+    outline: none;
+}
+
+.history-search input::placeholder {
+    color: #a3aed0;
 }
 
 /* List Layout */

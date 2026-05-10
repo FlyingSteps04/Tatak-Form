@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import sgMail from '@sendgrid/mail'
 sgMail.setApiKey(process.env.SG_API_KEY)
 import crypto from 'crypto'
-import { addUser, deleteUser, getAllUsers, getUserByID, getUserByIdentifier, updateStudent } from '../Database/users.js'
+import { addUser, deleteUser, deleteUserRecursive, getAllUsers, getUserByID, getUserByIdentifier, updateStudent } from '../Database/users.js'
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js'
 import { saveResetToken, getResetToken, deleteResetToken } from '../Database/resetTokens.js'
 import { addNotification } from '../Database/notifications.js'
@@ -141,23 +141,21 @@ router.put('/change-password', authenticateToken, authenticateRole("Student"), a
 })
 
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body
-  const user = await getUserByIdentifier(email)
+  const { id } = req.body
+  const user = await getUserByIdentifier(id)
   if (!user) return res.status(404).json({ error: "User not found" })
 
-  const resetToken = crypto.randomBytes(32).toString('hex')
+  const resetToken = Math.floor(100000 + Math.random() * 900000).toString()
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
   await saveResetToken(user.id, resetToken, expiresAt)
 
-  const resetLink = `http://localhost:3002/reset-password?token=${resetToken}`
-
   const msg = {
-    to: email,
+    to: user.email,
     from: process.env.EMAIL_USER,
     subject: "Password Reset Request",
-    text: `Click here to reset your password: ${resetLink}`,
-    html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>` 
+    text: `Your Code is: ${resetToken}`,
+    html: `<p>Enter this code <b>${resetToken}</b> to reset your password.</p>` 
   }
   try {
     await sgMail.send(msg)
@@ -170,10 +168,17 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body
 
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token and new password are required" })
+  }
+
   const resetRecord = await getResetToken(token)
-  if (!resetRecord) return res.status(400).json({ error: "Invalid token" })
+  if (!resetRecord) {
+    return res.status(400).json({ error: "Invalid code" })
+  }
 
   if (new Date(resetRecord.expires_at) < new Date()) {
+    await deleteResetToken(token)
     return res.status(400).json({ error: "Token expired" })
   }
 

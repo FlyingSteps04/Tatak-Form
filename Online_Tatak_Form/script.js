@@ -138,5 +138,79 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.toggle('fa-eye-slash');
         });
     }
+    // Load Top Performing Org for Landing Page
+    async function loadTopPerformingOrg() {
+        const card = document.getElementById('landing-top-org-card');
+        const logoWrap = document.getElementById('landing-top-logo-wrap');
+        const acronymEl = document.getElementById('landing-top-name');
+        const fullEl = document.getElementById('landing-top-full');
+        const membersEl = document.getElementById('landing-top-members');
+        const eventsEl = document.getElementById('landing-top-events');
+
+        if (!card) return;
+
+        try {
+            // Using apiRequest helper is more robust. skipRedirect: true avoids auto-login redirect for landing page.
+            console.log('Fetching top org from:', `${window.TatakApi.API_BASE_URL}/top-performing-org`);
+            const result = await window.TatakApi.apiRequest('/top-performing-org', { skipRedirect: true });
+
+            if (result && result.data) {
+                const org = result.data;
+                
+                // Helper to get initials (e.g., "UC College of Computer Studies" -> "UCCS")
+                const getInitials = (str) => {
+                    if (!str) return '??';
+                    // Filter out common small words for better initials
+                    const words = str.split(' ').filter(w => !['of', 'the', 'and', '&', 'at'].includes(w.toLowerCase()));
+                    if (words.length === 1) return words[0].substring(0, 4).toUpperCase();
+                    return words.map(w => w[0]).join('').toUpperCase().substring(0, 4);
+                };
+
+                const acronym = org.acronym || getInitials(org.name);
+
+                if (logoWrap) {
+                    if (org.logo) {
+                        // Match admin.js logic for logo formatting
+                        const apiBase = window.TatakApi ? window.TatakApi.API_BASE_URL : 'http://localhost:3002';
+                        const cleanPath = org.logo.startsWith('/') ? org.logo : `/${org.logo}`;
+                        const logoUrl = org.logo.startsWith('http') ? org.logo : `${apiBase}${cleanPath}`;
+                        logoWrap.innerHTML = `<img src="${logoUrl}" alt="Logo" onerror="this.src='655609284_1426759675272887_2726655014418430573_n.png'">`;
+                    } else {
+                        logoWrap.innerHTML = `<div class="org-logo-circle" style="width: 100%; height: 100%; background: var(--uc-yellow); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem;">${acronym}</div>`;
+                    }
+                }
+
+                if (acronymEl) acronymEl.innerText = acronym;
+                if (fullEl) fullEl.innerText = org.name || 'Top Performing Organization';
+                if (membersEl) membersEl.innerText = org.members_count || 0;
+                if (eventsEl) eventsEl.innerText = org.events_count || 0;
+
+                // Make sure card is visible
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.display = 'block';
+                }
+            } else {
+                console.warn('No top performing organization found in database.');
+                // Show a default state instead of hiding
+                if (fullEl) fullEl.innerText = 'Student Organization Showcase';
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.display = 'block';
+                }
+            }
+        } catch (err) {
+            console.warn('Top org showcase fetch failed, showing fallback:', err);
+            // Ensure card stays visible even on error
+            if (card) {
+                card.style.opacity = '1';
+                card.style.display = 'block';
+                if (fullEl) fullEl.innerText = 'Smart Attendance System Community';
+                if (acronymEl) acronymEl.innerText = 'SAS';
+            }
+        }
+    }
+
+    loadTopPerformingOrg();
 });
 

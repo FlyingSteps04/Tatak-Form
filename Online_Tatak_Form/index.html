@@ -35,16 +35,40 @@
         </div>
     </nav>
 
-    <section class="hero reveal">
-        <div class="hero-content">
-            <h1>Eliminate Manual <br><span class="highlight">Tatak Tracking</span> <br>Forever.</h1>
-            <p class="description">Smart Attendance System (SAS) replaces paper stamps with real-time QR attendance and instant reports all in one go.</p>
-            <div class="hero-btns">
-                <a href="login.html" class="btn-primary">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                    Launch App
-                </a>
-                <a href="#how-it-works" class="btn-outline">See How It Works</a>
+    <section class="hero reveal active">
+        <div class="hero-grid">
+            <div class="hero-content">
+                <h1>Eliminate Manual <br><span class="highlight">Tatak Tracking</span> <br>Forever.</h1>
+                <p class="description">Smart Attendance System (SAS) replaces paper stamps with real-time QR attendance and instant reports all in one go.</p>
+                <div class="hero-btns">
+                    <a href="login.html" class="btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Launch App
+                    </a>
+                    <a href="#how-it-works" class="btn-outline">See How It Works</a>
+                </div>
+            </div>
+            <div class="hero-showcase">
+                <div class="top-org-card" id="landing-top-org-card">
+                    <div class="card-tag">TOP PERFORMING ORG</div>
+                    <div class="org-main-vertical">
+                        <div class="org-logo-wrap" id="landing-top-logo-wrap">
+                            <div class="org-logo-circle" style="width: 100%; height: 100%; background: var(--uc-yellow); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem;">SAS</div>
+                        </div>
+                        <h2 class="org-acronym" id="landing-top-name">SAS</h2>
+                        <p class="org-fullname" id="landing-top-full">Smart Attendance System Community</p>
+                    </div>
+                    <div class="org-stats-simple">
+                        <div class="org-stat">
+                            <span class="val" id="landing-top-members">...</span>
+                            <span class="lbl">Members</span>
+                        </div>
+                        <div class="org-stat">
+                            <span class="val" id="landing-top-events">...</span>
+                            <span class="lbl">Events</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -240,6 +264,7 @@
     </div>
 </footer>
 
+    <script src="api-client.js?v=2"></script>
     <script src="script.js?v=2"></script>
 </body>
 </html>

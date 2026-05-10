@@ -8,7 +8,7 @@ import { authenticateRole, authenticateToken } from '../Middleware/authenticatio
 import { addEvent, deleteEvent, getAllEvents, getEventByID, updateEvent, approveEvent } from '../Database/events.js';
 import { getOrganizationByID } from '../Database/organizations.js';
 import { addLog } from '../Database/auditLogs.js';
-import { getAllStudents } from '../Database/users.js';
+import { getAllUsers } from '../Database/users.js';
 import { addNotification } from '../Database/notifications.js';
 
 import { pool } from '../Database/connection.js';
@@ -97,6 +97,19 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
         const insertId = result?.insertId || result?.[0]?.insertId || result?.id;
         const event = await getEventByID(insertId);
 
+        // Notify every user that a new event has been created
+        try {
+            const users = await getAllUsers();
+            await Promise.all(users.map(user => addNotification(
+                user.id,
+                'New Event Created',
+                `A new event '${name}' has been created for ${org.name}.`,
+                'Event'
+            )));
+        } catch (notifyErr) {
+            console.error('Failed to send event creation notifications:', notifyErr);
+        }
+
         return res.json({ success: true, data: event, qr_url: qrPublicPath });
 
     } catch (error) {
@@ -176,6 +189,26 @@ router.put('/:id/approve', authenticateToken, authenticateRole("Admin"), async (
     }
 });
 
+// CLOSE EVENT (Set end_date to now)
+router.patch('/:id/close', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const now = new Date();
+        
+        // Update the event's end_date in the database
+        const [result] = await pool.query('UPDATE events SET end_date = ? WHERE event_id = ?', [now, id]);
+        
+        if (!result.affectedRows) {
+            return res.status(404).json({ error: "Event not found or already closed" });
+        }
+
+        await addLog(req.user.id, "Close Event", "events", id);
+        res.json({ success: true, message: "Event closed successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // DELETE EVENT
 router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), async (req, res) => {
     try {
@@ -203,6 +236,19 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), a
             } catch (fsErr) {
                 console.error("❌ Failed to delete QR file:", fsErr);
             }
+        }
+
+        // Notify every user that an event has been deleted
+        try {
+            const users = await getAllUsers();
+            await Promise.all(users.map(user => addNotification(
+                user.id,
+                'Event Deleted',
+                `The event '${event.name}' has been deleted.`,
+                'Event'
+            )));
+        } catch (notifyErr) {
+            console.error('Failed to send event deletion notifications:', notifyErr);
         }
 
         await addLog(req.user.id, "Delete Event", "events", id);

@@ -1,10 +1,20 @@
 import express from 'express'
 import { authenticateToken, authenticateRole } from '../Middleware/authentication.js'
-import { addOrganization, addOrganizationWithId, deleteOrganization, getAllOrganizations, getOrganizationByID, updateOrganization } from '../Database/organizations.js'
+import { addOrganization, addOrganizationWithId, deleteOrganization, getAllOrganizations, getOrganizationByID, updateOrganization, getTopOrganization } from '../Database/organizations.js'
 import { addLog } from '../Database/auditLogs.js'
 import { processImage } from '../scripts/imageHelper.js'
 
 const router = express.Router()
+
+// Public route - MUST BE BEFORE gated routes
+router.get('/public/top', async (req, res) => {
+    try {
+        const topOrg = await getTopOrganization();
+        res.json({ success: true, data: topOrg });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 router.get('/', authenticateToken, async (req, res) => {
     const rows = await getAllOrganizations()
@@ -15,13 +25,11 @@ router.post('/', authenticateToken, authenticateRole("Admin"), async (req, res) 
     const { organization_id, name, description, logo } = req.body
     if(!name) return res.status(400).json({error: "Organization name is required"})
 
-    // Parse custom ID — must be a positive integer if provided
     const customId = organization_id ? parseInt(organization_id, 10) : null
     if (organization_id && (!customId || customId < 1)) {
         return res.status(400).json({ error: "Organization ID must be a positive integer" })
     }
     
-    // Convert base64 to file path if necessary
     const finalLogo = processImage(logo, 'logos');
     
     const result = await addOrganizationWithId(customId, name, description, finalLogo)
@@ -47,7 +55,6 @@ router.put('/:id', authenticateToken, authenticateRole("Admin"), async (req, res
     const { name, description, is_active, logo } = req.body
     if(!name) return res.status(400).json({error: "Organization name is required"})
     
-    // Convert base64 to file path if necessary
     const finalLogo = processImage(logo, 'logos');
     
     const result = await updateOrganization(id, name, description, is_active, finalLogo)

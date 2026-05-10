@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmBtn = document.getElementById('confirmLogout');
     const sidebarLogout = document.getElementById('sidebarLogout');
     const topbarLogout = document.getElementById('topbarLogout');
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const notificationList = document.getElementById('notificationList');
+    const markAllReadBtn = document.getElementById('markAllRead');
+    let studentNotificationsCache = { unread: [], read: [] };
+    let allHistoryRows = []; // Cache for search functionality
 
     const navOverview = document.getElementById('nav-overview');
     const navEvents = document.getElementById('nav-events');
@@ -217,6 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Simple helper to hide all sections and remove active state from all nav items.
      */
+    /**
+     * Resets all navigation states.
+     */
     const resetNavigation = () => {
         [sectionOverview, sectionEvents, sectionHistory, sectionReports].forEach(sec => {
             if (sec) sec.style.display = 'none';
@@ -225,6 +235,47 @@ document.addEventListener('DOMContentLoaded', () => {
         [navOverview, navEvents, navHistory, navReports].forEach(nav => {
             if (nav) nav.classList.remove('active');
         });
+    };
+
+    /**
+     * Shows a specific section and persists the state.
+     */
+    window.showSection = (sectionId) => {
+        resetNavigation();
+        
+        const title = document.getElementById('dynamic-title');
+        const sub = document.getElementById('dynamic-subtitle');
+
+        if (sectionId === 'nav-overview') {
+            if (navOverview) navOverview.classList.add('active');
+            if (sectionOverview) sectionOverview.style.display = 'block';
+            // Title will be updated by loadUserInfo with the student's name
+            if (sub) sub.textContent = 'Friday, February 27, 2026 • 2nd Semester A.Y. 2025–2026';
+            loadOverview();
+        } 
+        else if (sectionId === 'nav-events') {
+            if (navEvents) navEvents.classList.add('active');
+            if (sectionEvents) sectionEvents.style.display = 'block';
+            if (title) title.textContent = 'Events';
+            if (sub) sub.textContent = 'Discover and participate in university events';
+            loadEvents();
+        }
+        else if (sectionId === 'nav-history') {
+            if (navHistory) navHistory.classList.add('active');
+            if (sectionHistory) sectionHistory.style.display = 'block';
+            if (title) title.textContent = 'My Attendance History';
+            if (sub) sub.textContent = 'Review your participation across all events';
+            loadStudentAttendance();
+        }
+        else if (sectionId === 'nav-reports') {
+            if (navReports) navReports.classList.add('active');
+            if (sectionReports) sectionReports.style.display = 'block';
+            if (title) title.textContent = 'Reports & Certificates';
+            if (sub) sub.textContent = 'Download official certificates and track your progress';
+            loadStudentReports();
+        }
+
+        localStorage.setItem('student_last_section', sectionId);
     };
 
     /**
@@ -428,8 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = res;
             if (user) {
                 // Update Welcome Text
-                const welcomeH1 = document.querySelector('.welcome-text h1');
-                if (welcomeH1) welcomeH1.innerHTML = `Hello, <span class="highlight" style="color: #f59e0b; text-transform: uppercase;">${user.fname || 'Student'}</span>`;
+                const welcomeTitle = document.getElementById('dynamic-title');
+                if (welcomeTitle) welcomeTitle.innerHTML = `Hello, <span class="highlight" style="color: #f59e0b; text-transform: uppercase;">${user.fname || 'Student'}</span>`;
                 
                 // Update Profile Avatar
                 const profileAvatar = document.querySelector('.profile-avatar');
@@ -457,26 +508,32 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadStudentAttendance() {
         try {
             const data = await window.TatakApi.apiRequest('/attendance/users');
-            const rows = Array.isArray(data.data) ? data.data : [];
+            allHistoryRows = Array.isArray(data.data) ? data.data : [];
 
-            renderHistorySummary(rows);
-
-            if (historyContainer) {
-                const header = `
-                    <div class="history-header">
-                        <span>EVENT</span>
-                        <span>DATE & TIME</span>
-                        <span>STATUS</span>
-                    </div>
-                `;
-                if (!rows.length) {
-                    historyContainer.innerHTML = `${header}<div class="history-row"><span class="event-name">No attendance records yet.</span></div>`;
-                } else {
-                    historyContainer.innerHTML = header + rows.map(buildHistoryRow).join('');
-                }
-            }
+            renderHistorySummary(allHistoryRows);
+            renderHistoryRows(allHistoryRows);
         } catch (err) {
             console.error('Error loading attendance history', err);
+        }
+    }
+
+    /**
+     * Renders history rows into the history container.
+     */
+    function renderHistoryRows(rows) {
+        if (!historyContainer) return;
+        const header = `
+            <div class="history-header">
+                <span>EVENT</span>
+                <span>DATE & TIME</span>
+                <span>STATUS</span>
+            </div>
+        `;
+        
+        if (!rows.length) {
+            historyContainer.innerHTML = `${header}<div class="history-row" style="grid-template-columns: 1fr;"><span class="event-name" style="text-align: center; color: #a3aed0;">No matching attendance records found.</span></div>`;
+        } else {
+            historyContainer.innerHTML = header + rows.map(buildHistoryRow).join('');
         }
     }
 
@@ -505,45 +562,295 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Navigation between sections.
-    if (navOverview) {
-        navOverview.addEventListener('click', () => {
-            resetNavigation();
-            navOverview.classList.add('active');
-            if (sectionOverview) sectionOverview.style.display = 'block';
-            loadOverview();
+    if (navOverview) navOverview.addEventListener('click', () => showSection('nav-overview'));
+    if (navEvents) navEvents.addEventListener('click', () => showSection('nav-events'));
+    if (navHistory) navHistory.addEventListener('click', () => showSection('nav-history'));
+    if (navReports) navReports.addEventListener('click', () => showSection('nav-reports'));
+
+    // History Search functionality
+    const historySearchInput = document.getElementById('historySearchInput');
+    if (historySearchInput) {
+        historySearchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allHistoryRows.filter(row => 
+                (row.event_name || '').toLowerCase().includes(term) ||
+                (row.status || '').toLowerCase().includes(term) ||
+                (row.timestamp && new Date(row.timestamp).toLocaleString().toLowerCase().includes(term))
+            );
+            renderHistoryRows(filtered);
         });
     }
 
-    if (navEvents) {
-        navEvents.addEventListener('click', () => {
-            resetNavigation();
-            navEvents.classList.add('active');
-            if (sectionEvents) sectionEvents.style.display = 'block';
-            loadEvents();
+    const updateNotificationBadgeUI = () => {
+        if (!notificationBadge) return;
+        const count = studentNotificationsCache.unread.length;
+        if (count > 0) {
+            notificationBadge.innerText = count > 9 ? '9+' : String(count);
+            notificationBadge.style.display = 'inline-flex';
+        } else {
+            notificationBadge.style.display = 'none';
+        }
+    };
+
+    const buildNotificationItem = (notification, unread = false) => {
+        return `
+            <button type="button" class="notification-item ${unread ? 'unread' : ''}" data-id="${notification.notification_id}">
+                <p class="notification-title">${notification.title || 'Notification'}</p>
+                <p class="notification-message">${notification.message || ''}</p>
+                <div class="notification-meta">
+                    <span>${notification.type || 'System'}</span>
+                    <span>${new Date(notification.created_at).toLocaleString()}</span>
+                </div>
+            </button>
+        `;
+    };
+
+    const renderStudentNotifications = () => {
+        if (!notificationList) return;
+        if (markAllReadBtn) {
+            markAllReadBtn.style.display = studentNotificationsCache.unread.length ? 'inline-flex' : 'none';
+        }
+
+        if (!studentNotificationsCache.unread.length && !studentNotificationsCache.read.length) {
+            notificationList.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+            return;
+        }
+
+        let html = '';
+        if (studentNotificationsCache.unread.length) {
+            html += '<div class="notification-section-label">New</div>';
+            html += studentNotificationsCache.unread.map(item => buildNotificationItem(item, true)).join('');
+        }
+        if (studentNotificationsCache.read.length) {
+            html += '<div class="notification-section-label">Earlier</div>';
+            html += studentNotificationsCache.read.map(item => buildNotificationItem(item, false)).join('');
+        }
+
+        notificationList.innerHTML = html;
+        notificationList.querySelectorAll('.notification-item').forEach(button => {
+            button.addEventListener('click', async () => {
+                const id = button.dataset.id;
+                if (!id) return;
+                await markStudentNotificationRead(id);
+            });
         });
+    };
+
+    const hideStudentNotifications = () => {
+        if (notificationDropdown) notificationDropdown.style.display = 'none';
+    };
+
+    /**
+     * Loads student attendance history and renders it as certificates.
+     */
+    async function loadStudentReports() {
+        const container = document.getElementById('section-reports');
+        if (!container) return;
+
+        // Initialize structure if needed
+        let listContainer = document.getElementById('student-certificates-list');
+        if (!listContainer) {
+            container.innerHTML = `
+                <div class="white-container">
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin: 0; color: #1e293b;">My Certificates</h3>
+                        <p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">Download your attendance certificates for attended events.</p>
+                    </div>
+                    <div id="student-certificates-list">
+                        <p style="text-align: center; padding: 40px; color: #94a3b8;">Loading history...</p>
+                    </div>
+                </div>`;
+            listContainer = document.getElementById('student-certificates-list');
+        }
+
+        try {
+            const res = await window.TatakApi.apiRequest('/attendance/users');
+            const history = Array.isArray(res.data) ? res.data : [];
+            const attendedEvents = history.filter(h => h.status === 'Present' || h.status === 'Late');
+
+            if (attendedEvents.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #94a3b8;">You haven\'t attended any events yet.</p>';
+                return;
+            }
+
+            listContainer.innerHTML = attendedEvents.map(item => {
+                const dateStr = new Date(item.timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const certId = `CERT-${item.event_id}-${new Date(item.timestamp).getTime().toString().slice(-4)}`;
+                
+                return `
+                    <div class="cert-row" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid #f1f5f9; gap: 20px;">
+                        <div style="width: 48px; height: 48px; background: #f0fdf4; color: #16a34a; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0; color: #1e293b; font-size: 16px;">${item.event_name || 'Event Attendance'}</h4>
+                            <p style="margin: 4px 0; color: #64748b; font-size: 13px;">Attended on ${dateStr}</p>
+                            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                <span class="badge-mini" style="background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${item.status}</span>
+                                <span style="font-size: 11px; color: #94a3b8;">Verify ID: ${certId}</span>
+                            </div>
+                        </div>
+                        <button class="btn-download" 
+                                data-event-name="${(item.event_name || 'Event').replace(/'/g, "&apos;")}" 
+                                data-details="Attended on ${dateStr}"
+                                data-cert-id="${certId}"
+                                style="background: var(--sidebar-bg); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Claim PDF</button>
+                    </div>
+                `;
+            }).join('');
+
+            listContainer.querySelectorAll('.btn-download').forEach(button => {
+                button.addEventListener('click', () => {
+                    const eventName = button.dataset.eventName;
+                    const details = button.dataset.details;
+                    const certificateId = button.dataset.certId;
+                    const recipient = document.getElementById('student-name')?.innerText || 'Student';
+                    downloadCertificate({ 
+                        recipient, 
+                        eventName, 
+                        details, 
+                        certificateId, 
+                        issuer: 'University of Cebu', 
+                        date: new Date().toLocaleDateString() 
+                    });
+                });
+            });
+        } catch (err) {
+            listContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #ef4444;">Error loading certificates.</p>';
+        }
     }
 
-    if (navHistory) {
-        navHistory.addEventListener('click', () => {
-            resetNavigation(); 
-            navHistory.classList.add('active');
-            if (sectionHistory) sectionHistory.style.display = 'block';
+    const downloadCertificate = ({ recipient = 'Student', eventName = 'Attendance Event', details = '', certificateId = 'CERT-000', issuer = 'University of Cebu', date = '' } = {}) => {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            console.error('jsPDF library not available');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+        const pageWidth = doc.internal.pageSize.getWidth();
 
-            // When user visits History, load attendance from backend.
-            loadStudentAttendance();
+        doc.setFillColor('#f8fafc');
+        doc.rect(0, 0, pageWidth, 612, 'F');
+        doc.setFontSize(28);
+        doc.setTextColor('#1e3a8a');
+        doc.text('CERTIFICATE OF PARTICIPATION', pageWidth / 2, 120, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setTextColor('#475569');
+        doc.text('This certificate is proudly presented to', pageWidth / 2, 170, { align: 'center' });
+
+        doc.setFontSize(40);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor('#1f2937');
+        doc.text(recipient, pageWidth / 2, 230, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`For attending and participating in: ${eventName}`, pageWidth / 2, 280, { align: 'center' });
+        doc.text(`Details: ${details}`, pageWidth / 2, 305, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setTextColor('#4b5563');
+        doc.text(`Certificate ID: ${certificateId}`, pageWidth / 2, 345, { align: 'center' });
+        doc.text(`Issuer: ${issuer}${date ? ` • ${date}` : ''}`, pageWidth / 2, 365, { align: 'center' });
+
+        doc.setDrawColor('#cbd5e1');
+        doc.setLineWidth(1.5);
+        doc.line(80, 450, pageWidth - 80, 450);
+        doc.setFontSize(12);
+        doc.setTextColor('#64748b');
+        doc.text('This certificate is issued by the University of Cebu and is valid for official attendance proof purposes.', pageWidth / 2, 475, { align: 'center' });
+
+        const fileName = `${certificateId.replace(/\s+/g, '_') || 'certificate'}.pdf`;
+        doc.save(fileName);
+    };
+
+    const setupStudentCertificateButtons = () => {
+        document.querySelectorAll('.btn-download').forEach(button => {
+            button.addEventListener('click', () => {
+                const row = button.closest('.cert-row');
+                const eventName = row.querySelector('h3')?.innerText || 'Event Attendance';
+                const details = row.querySelector('p')?.innerText || '';
+                const certificateId = row.querySelector('.cert-id')?.innerText?.split('•')[0]?.trim().replace('Certificate ID:', '').trim() || `CERT-${Date.now()}`;
+                const recipient = document.querySelector('.top-bar .welcome-text h1')?.innerText.replace('Hello,', '').trim() || 'Student';
+                downloadCertificate({ recipient, eventName, details, certificateId, issuer: 'University of Cebu', date: new Date().toLocaleDateString() });
+            });
+        });
+    };
+
+    const toggleStudentNotifications = async () => {
+        if (!notificationDropdown) return;
+        const isOpen = notificationDropdown.style.display === 'block';
+        if (isOpen) {
+            hideStudentNotifications();
+            return;
+        }
+        await loadStudentNotifications();
+        notificationDropdown.style.display = 'block';
+    };
+
+    const loadStudentNotifications = async () => {
+        if (!notificationList) return;
+        try {
+            const res = await window.TatakApi.apiRequest('/notifications');
+            studentNotificationsCache.unread = res.unread || [];
+            studentNotificationsCache.read = res.read || [];
+            updateNotificationBadgeUI();
+            renderStudentNotifications();
+        } catch (err) {
+            console.error('Error loading notifications:', err);
+            if (notificationList) notificationList.innerHTML = '<div class="notification-empty">Unable to load notifications.</div>';
+        }
+    };
+
+    const markStudentNotificationRead = async (id) => {
+        try {
+            await window.TatakApi.apiRequest(`/notifications/${id}`, { method: 'PUT' });
+            await loadStudentNotifications();
+        } catch (err) {
+            console.error('Error marking notification read:', err);
+        }
+    };
+
+    const markAllStudentNotificationsRead = async () => {
+        if (!studentNotificationsCache.unread.length) return;
+        try {
+            await Promise.all(studentNotificationsCache.unread.map(notification => window.TatakApi.apiRequest(`/notifications/${notification.notification_id}`, { method: 'PUT' })));
+            await loadStudentNotifications();
+        } catch (err) {
+            console.error('Error marking all notifications read:', err);
+        }
+    };
+
+    if (notificationBell) {
+        notificationBell.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await toggleStudentNotifications();
         });
     }
-
-    if (navReports) {
-        navReports.addEventListener('click', () => {
-            resetNavigation();
-            navReports.classList.add('active');
-            if (sectionReports) sectionReports.style.display = 'block';
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await markAllStudentNotificationsRead();
         });
     }
+    window.addEventListener('click', (e) => {
+        if (notificationDropdown && notificationDropdown.style.display === 'block' && !notificationDropdown.contains(e.target) && notificationBell && !notificationBell.contains(e.target)) {
+            hideStudentNotifications();
+        }
+    });
 
-    // Initial Dashboard Refresh
-    refreshDashboard();
+    // Initial authentication check then load profile
+    ensureStudentAuthenticated();
+    loadUserInfo().then(async () => {
+        const lastSection = localStorage.getItem('student_last_section') || 'nav-overview';
+        showSection(lastSection);
+        
+        if (typeof loadStudentNotifications === 'function') {
+            loadStudentNotifications();
+        }
+        setupStudentCertificateButtons();
+    });
 
     // Global click handler for closing logout modal by clicking outside.
     window.addEventListener('click', (e) => {
