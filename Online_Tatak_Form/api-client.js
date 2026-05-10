@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3002';
+const API_BASE_URL = 'https://tatak-form.onrender.com';
 
 /**
  * Returns the currently stored JWT token from browser storage.
