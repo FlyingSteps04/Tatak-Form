@@ -97,3 +97,5 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   PRIMARY KEY (`log_id`),
   CONSTRAINT `fk_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ -- TIDB password: UnRu2fHTyivNGf1o

@@ -58,7 +58,7 @@ async function apiRequest(path, options = {}) {
     let payload = {};
     try {
         payload = JSON.parse(responseText);
-    } catch (e) {}
+    } catch (e) { }
 
     if (!response.ok) {
         console.error('API Error Response:', responseText);
@@ -126,7 +126,7 @@ function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     let icon = 'info-circle';
     if (type === 'success') icon = 'check-circle';
     if (type === 'error') icon = 'exclamation-circle';
