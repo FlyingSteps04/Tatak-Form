@@ -67,6 +67,8 @@ CREATE TABLE IF NOT EXISTS `organization_officer` (
   `organization_id` int NOT NULL,
   `user_id` int NOT NULL,
   `position` varchar(100) DEFAULT 'Officer',
+  `term_start` date DEFAULT NULL,
+  `term_end` date DEFAULT NULL,
   `status` varchar(20) DEFAULT 'Active',
   PRIMARY KEY (`officer_id`),
   CONSTRAINT `fk_off_org` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`organization_id`) ON DELETE CASCADE,
