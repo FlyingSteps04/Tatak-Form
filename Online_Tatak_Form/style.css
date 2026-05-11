@@ -636,6 +636,7 @@ body {
 .logo-icon img {
     height: 40px;
     width: auto;
+    border-radius: 50%;
 }
 
 .logo-text {
