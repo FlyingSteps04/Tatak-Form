@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepIndicators = document.querySelectorAll('.step-dot');
     const steps = ['step1', 'step2', 'step3', 'step4'];
     let currentStep = 0;
-    const apiBaseUrl = 'http://localhost:3002/auth';
+    const apiBaseUrl = `${window.TatakApi?.API_BASE_URL || 'https://tatak-form.onrender.com'}/auth`;
 
     const studentIdInput = document.getElementById('resetId');
     const studentIdPreview = document.getElementById('studentIdPreview');
