@@ -5,11 +5,12 @@ dotenv.config()
 
 export const pool = mysql.createPool({
     host: process.env.SAS_Host,
+    port: 4000,
     user: process.env.SAS_User,
     password: process.env.SAS_Password,
     database: process.env.SAS_Database,
     ssl: {
-        minVersion: 'TLSv1.2',
-        rejectUnauthorized: true
-    }
+        rejectUnauthorized: false
+    },
+    enableKeepAlive: true
 })
