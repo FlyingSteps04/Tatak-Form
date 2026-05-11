@@ -1,15 +1,18 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+dotenv.config()
 import sgMail from '@sendgrid/mail'
+if (!process.env.SG_API_KEY) {
+    console.warn('SendGrid API key is not set. Forgot password email will fail if attempted.')
+}
 sgMail.setApiKey(process.env.SG_API_KEY)
 import crypto from 'crypto'
 import { addUser, deleteUser, deleteUserRecursive, getAllUsers, getUserByID, getUserByIdentifier, updateStudent } from '../Database/users.js'
 import { authenticateRole, authenticateToken } from '../Middleware/authentication.js'
 import { saveResetToken, getResetToken, deleteResetToken } from '../Database/resetTokens.js'
 import { addNotification } from '../Database/notifications.js'
-import dotenv from 'dotenv'
-dotenv.config()
 import { pool } from '../Database/connection.js'
 import { processImage } from '../scripts/imageHelper.js'
 
