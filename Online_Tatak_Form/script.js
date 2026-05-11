@@ -76,18 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.input-field').forEach(field => {
                     field.classList.add('error-state');
                 });
-
-                let errorMessage = 'Login failed. Please check your credentials.';
-                try {
-                    const errorData = await response.json();
-                    if (errorData) {
-                        errorMessage = errorData.message || errorData.error || errorMessage;
-                    }
-                } catch (err) {
-                    // Ignore JSON parse errors and use the default message.
-                }
-
-                window.TatakApi.showToast(errorMessage, 'error');
+                window.TatakApi.showToast('Incorrect Username or Password!', 'error');
                 return;
             }
 
