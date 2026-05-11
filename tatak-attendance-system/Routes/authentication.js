@@ -115,6 +115,7 @@ router.post('/login', async (req, res) => {
     }
 })
 
+
 router.post('/logout', authenticateToken, async (req, res) => {
     res.json({message: "Logged out Successfully. Please remove token on client side!"})
 })
@@ -145,26 +146,54 @@ router.put('/change-password', authenticateToken, authenticateRole("Student"), a
 
 router.post('/forgot-password', async (req, res) => {
   const { id } = req.body
-  const user = await getUserByIdentifier(id)
-  if (!user) return res.status(404).json({ error: "User not found" })
-
-  const resetToken = Math.floor(100000 + Math.random() * 900000).toString()
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
-
-  await saveResetToken(user.id, resetToken, expiresAt)
-
-  const msg = {
-    to: user.email,
-    from: process.env.EMAIL_USER,
-    subject: "Password Reset Request",
-    text: `Your Code is: ${resetToken}`,
-    html: `<p>Enter this code <b>${resetToken}</b> to reset your password.</p>` 
-  }
+  
   try {
-    await sgMail.send(msg)
-    res.json({message: "Password reset email sent"})
-  } catch (error) {
-    res.status(500).json({error: error.message})
+    const user = await getUserByIdentifier(id)
+    if (!user) {
+        console.warn(`Forgot Password: User not found for identifier: ${id}`);
+        return res.status(404).json({ error: "User not found" });
+    }
+
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+    try {
+        await saveResetToken(user.id, resetToken, expiresAt)
+    } catch (dbErr) {
+        console.error('Forgot Password: Database error saving token:', dbErr);
+        return res.status(500).json({ error: "Internal database error. Please try again later." });
+    }
+
+    const msg = {
+        to: user.email,
+        from: process.env.EMAIL_USER,
+        subject: "Password Reset Request",
+        text: `Your Code is: ${resetToken}`,
+        html: `<p>Enter this code <b>${resetToken}</b> to reset your password.</p>` 
+    }
+
+    try {
+        await sgMail.send(msg)
+        console.log(`Forgot Password: Reset email sent successfully to ${user.email}`);
+        res.json({message: "Password reset email sent"})
+    } catch (emailErr) {
+        console.error('Forgot Password: Email service (SendGrid) error:', emailErr);
+        if (emailErr.response) {
+            console.error('SendGrid Response Body:', JSON.stringify(emailErr.response.body, null, 2));
+        }
+        
+        // Return a more descriptive error if it's unauthorized (usually API key issue)
+        if (emailErr.message === 'Unauthorized' || emailErr.code === 401) {
+            return res.status(500).json({ 
+                error: "Email service unauthorized. Please check backend environment variables (SG_API_KEY)." 
+            });
+        }
+        
+        res.status(500).json({ error: "Failed to send reset email. Please try again later." });
+    }
+  } catch (err) {
+    console.error('Forgot Password: Unexpected server error:', err);
+    res.status(500).json({ error: "An unexpected server error occurred." });
   }
 })
 
