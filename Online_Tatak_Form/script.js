@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleLogin(identifier, password) {
+    async function handleLogin(identifier, password, expectedRole) {
         try {
             const response = await fetch(`${window.TatakApi.API_BASE_URL}/auth/login`, {
                 method: 'POST',
@@ -81,6 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+
+            // Security Check: Verify if the account role matches the selected tab
+            // Case-insensitive comparison for flexibility
+            const actualRole = (data.role || '').toLowerCase();
+            const targetRole = (expectedRole || '').toLowerCase();
+
+            if (actualRole !== targetRole) {
+                window.TatakApi.showToast(`Access Denied: This account is registered as an ${data.role}, not a ${expectedRole}.`, 'error');
+                return;
+            }
 
             // Save token and role
             localStorage.setItem('tatak_token', data.token);
@@ -110,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const enteredUser = usernameInput.value;
             const enteredPass = passwordInput.value;
-            handleLogin(enteredUser, enteredPass);
+            handleLogin(enteredUser, enteredPass, currentRole);
         }); 
     }
 

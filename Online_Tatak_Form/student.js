@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- AUTH CHECK ---
+    const token = window.TatakApi.getAuthToken();
+    const role = localStorage.getItem('tatak_role');
+    
+    if (!token || (role !== 'Student' && role !== 'Officer' && role !== 'Admin')) {
+        console.warn('Unauthorized access attempt. Redirecting to login.');
+        window.location.replace('login.html');
+        return;
+    }
+
     const formatImageUrl = window.TatakApi.formatImageUrl;
 
     const modal = document.getElementById('logoutModal');
