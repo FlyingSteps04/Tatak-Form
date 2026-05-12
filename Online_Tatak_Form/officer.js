@@ -1406,12 +1406,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- NAVIGATION LOGIC ---
+    function setActiveNavItem(id) {
+        // Desktop sidebar items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.id === id);
+        });
+
+        // Mobile bottom nav tabs
+        const sectionMap = {
+            'nav-overview': 'mobile-nav-overview',
+            'nav-events': 'mobile-nav-events',
+            'nav-attendance': 'mobile-nav-attendance',
+            'nav-reports': 'mobile-nav-reports'
+        };
+
+        const mobileId = sectionMap[id];
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.id === mobileId);
+        });
+    }
+
+    function showSection(id) {
+        const mapping = navMapping[id];
+        if (!mapping) return;
+
+        // Hide all sections
+        Object.values(navMapping).forEach(m => {
+            const sectionEl = document.getElementById(m.section);
+            if (sectionEl) sectionEl.style.display = 'none';
+        });
+
+        // Show active section
+        const activeSection = document.getElementById(mapping.section);
+        if (activeSection) {
+            activeSection.style.display = 'block';
+            activeSection.classList.add('animate-in');
+        }
+
+        // Update title
+        if (dynamicTitle) dynamicTitle.innerText = mapping.title;
+
+        // Update nav state
+        setActiveNavItem(id);
+
+        // Load dynamic data for specific sections
+        if (id === 'nav-overview') loadOfficerOverview();
+        if (id === 'nav-events') loadManageEvents();
+        if (id === 'nav-attendance') loadEventsIntoSelector();
+        if (id === 'nav-reports') loadOfficerReports();
+
+        // Save last section
+        localStorage.setItem('officer_last_section', id);
+    }
+
     Object.keys(navMapping).forEach(id => {
         const navBtn = document.getElementById(id);
         if (navBtn) {
             navBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 showSection(id);
+            });
+        }
+    });
+
+    // Bind Mobile Bottom Nav Tabs
+    const mobileNavMap = {
+        'mobile-nav-overview': 'nav-overview',
+        'mobile-nav-events': 'nav-events',
+        'mobile-nav-attendance': 'nav-attendance',
+        'mobile-nav-reports': 'nav-reports'
+    };
+
+    Object.keys(mobileNavMap).forEach(mId => {
+        const tab = document.getElementById(mId);
+        if (tab) {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection(mobileNavMap[mId]);
             });
         }
     });
@@ -1426,8 +1498,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Check for reload-resilient success modals
-        checkPendingSuccessModal();
+        if (typeof checkPendingSuccessModal === 'function') {
+            checkPendingSuccessModal();
+        }
     });
+
+    // Logout Handling
+    const openLogout = () => {
+        if (logoutModal) logoutModal.style.display = 'flex';
+    };
+
+    if (sidebarLogout) sidebarLogout.addEventListener('click', openLogout);
+    if (topbarLogout) topbarLogout.addEventListener('click', openLogout);
+    
+    // Mobile logout
+    const mobileLogoutBtn = document.querySelector('.mobile-dashboard-header .mobile-icon-btn:last-child');
+    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', openLogout);
+
+    if (stayBtn) stayBtn.addEventListener('click', () => {
+        if (logoutModal) logoutModal.style.display = 'none';
+    });
+
+    if (confirmBtn) confirmBtn.addEventListener('click', performLogout);
+
     if (typeof setupOfficerCertificateButtons === 'function') {
         setupOfficerCertificateButtons();
     }

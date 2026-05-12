@@ -6,10 +6,26 @@
     <title>Officer Dashboard - UC Admin Access System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="officer.css">
+    <link rel="stylesheet" href="mobile-dashboards.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <aside class="sidebar">
+        <!-- Mobile Header -->
+        <header class="mobile-dashboard-header mobile-only">
+            <div class="mobile-header-left">
+                <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="UC Logo" class="mobile-header-logo">
+                <div class="mobile-header-text">
+                    <strong>Officer Dashboard</strong>
+                    <span>Access System</span>
+                </div>
+            </div>
+            <div class="mobile-header-right">
+                <button class="mobile-icon-btn"><i class="far fa-bell"></i></button>
+                <button class="mobile-icon-btn" onclick="openModal('logoutModal')"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+
+        <aside class="sidebar desktop-only">
             <div class="sidebar-header">
                 <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="University Logo" class="side-logo">
                 <div class="side-title">
@@ -278,6 +294,26 @@
                 </div>
             </section>
         </main>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="mobile-bottom-nav mobile-only">
+            <a href="#" class="nav-tab active" id="mobile-nav-overview">
+                <i class="fas fa-th-list"></i>
+                <span>Overview</span>
+            </a>
+            <a href="#" class="nav-tab" id="mobile-nav-events">
+                <i class="far fa-calendar-check"></i>
+                <span>Events</span>
+            </a>
+            <a href="#" class="nav-tab" id="mobile-nav-attendance">
+                <i class="fas fa-users"></i>
+                <span>Attendance</span>
+            </a>
+            <a href="#" class="nav-tab" id="mobile-nav-reports">
+                <i class="far fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+        </nav>
     </div>
 
     <div id="officerEventModal" class="modal-overlay">
