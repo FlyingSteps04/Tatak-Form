@@ -6,35 +6,12 @@
     <title>Student Dashboard - Access System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="student.css">
-    <link rel="stylesheet" href="mobile-dashboards.css">
-    
-    <!-- Mobile Redirection -->
-    <script>
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768) {
-            window.location.href = 'mobile_view/student.html';
-        }
-    </script>
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Mobile Header -->
-        <header class="mobile-dashboard-header mobile-only">
-            <div class="mobile-header-left">
-                <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="UC Logo" class="mobile-header-logo">
-                <div class="mobile-header-text">
-                    <strong>Student Dashboard</strong>
-                    <span>Student Portal</span>
-                </div>
-            </div>
-            <div class="mobile-header-right">
-                <button class="mobile-icon-btn"><i class="far fa-bell"></i></button>
-                <button class="mobile-icon-btn" id="mobile-logout"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
-        </header>
-
-        <aside class="sidebar desktop-only">
+        <aside class="sidebar">
             <div class="sidebar-header">
                 <img src="655609284_1426759675272887_2726655014418430573_n.png" alt="University Logo" class="side-logo">
                 <div class="side-title">
@@ -315,26 +292,6 @@
             </div>
             </div>
         </main>
-
-        <!-- Mobile Bottom Nav -->
-        <nav class="mobile-bottom-nav mobile-only">
-            <a href="#" class="nav-tab active" id="mobile-nav-overview">
-                <i class="fas fa-th-list"></i>
-                <span>Overview</span>
-            </a>
-            <a href="#" class="nav-tab" id="mobile-nav-events">
-                <i class="far fa-calendar-alt"></i>
-                <span>Events</span>
-            </a>
-            <a href="#" class="nav-tab" id="mobile-nav-history">
-                <i class="fas fa-clipboard-list"></i>
-                <span>History</span>
-            </a>
-            <a href="#" class="nav-tab" id="mobile-nav-reports">
-                <i class="far fa-file-alt"></i>
-                <span>Reports</span>
-            </a>
-        </nav>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="api-client.js?v=2"></script>

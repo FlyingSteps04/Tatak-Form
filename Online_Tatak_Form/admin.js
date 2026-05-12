@@ -500,120 +500,87 @@ document.addEventListener('DOMContentLoaded', () => {
         // Persist current section
         localStorage.setItem('admin_last_section', section);
 
-        // Update Desktop Navigation State
+        // Update Active Navigation State
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        
-        // Update Mobile Bottom Nav State
-        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-
         if (element) {
             element.classList.add('active');
         } else {
-            // Find both desktop nav item and mobile nav tab
-            const desktopItems = document.querySelectorAll('.nav-item');
-            desktopItems.forEach(item => {
+            // If no element passed, find the link by data-section or text
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
                 if (item.getAttribute('onclick')?.includes(`'${section}'`)) {
                     item.classList.add('active');
-                }
-            });
-
-            const mobileTabs = document.querySelectorAll('.nav-tab');
-            mobileTabs.forEach(tab => {
-                if (tab.getAttribute('onclick')?.includes(`'${section}'`)) {
-                    tab.classList.add('active');
                 }
             });
         }
 
         // Reset header to default
         const header = document.querySelector('.dashboard-header');
-        if (header) header.classList.remove('header-dark');
+        header.classList.remove('header-dark');
         
         // Show action button by default
-        if (actionBtn) actionBtn.style.display = 'block';
-
-        // Update Mobile Action Button visibility/text if needed
-        const mobileActionBtn = document.getElementById('mobile-action-btn');
+        actionBtn.style.display = 'block';
 
         if (section === 'overview') {
-            if (mainTitle) mainTitle.innerHTML = 'HELLO, <span class="highlight">ADMIN</span>';
-            if (actionBtn) {
-                actionBtn.innerHTML = '<i class="fas fa-plus"></i> New Event';
-                actionBtn.onclick = () => openModal('addEventModal');
-            }
-            if (mobileActionBtn) {
-                mobileActionBtn.style.display = 'block';
-                mobileActionBtn.innerText = '+ New Event';
-                mobileActionBtn.onclick = () => openModal('addEventModal');
-            }
+            mainTitle.innerHTML = 'HELLO, <span class="highlight">ADMIN</span>';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> New Event';
+            actionBtn.onclick = () => openModal('addEventModal');
             renderOverview();
         } 
         else if (section === 'events') {
-            if (mainTitle) mainTitle.innerText = 'Events Management';
-            if (actionBtn) {
-                actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Event';
-                actionBtn.onclick = () => openModal('addEventModal');
-            }
-            if (mobileActionBtn) {
-                mobileActionBtn.style.display = 'block';
-                mobileActionBtn.innerText = '+ Event';
-                mobileActionBtn.onclick = () => openModal('addEventModal');
-            }
+            mainTitle.innerText = 'Events Management';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Event';
+            actionBtn.onclick = () => openModal('addEventModal');
             renderEvents();
         }
         else if (section === 'organization') {
-            if (mainTitle) mainTitle.innerText = 'Organization Management';
-            if (actionBtn) {
-                actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Organization';
-                actionBtn.onclick = () => {
-                    const form = document.getElementById('addOrgForm');
-                    if (form) form.reset();
-                    openModal('addOrgModal');
-                };
-            }
-            if (mobileActionBtn) {
-                mobileActionBtn.style.display = 'block';
-                mobileActionBtn.innerText = '+ Org';
-                mobileActionBtn.onclick = () => openModal('addOrgModal');
-            }
+            mainTitle.innerText = 'Organization Management';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Organization';
+            actionBtn.onclick = () => {
+                const form = document.getElementById('addOrgForm');
+                if (form) form.reset();
+                const placeholder = document.querySelector('#addOrgModal .avatar-upload-placeholder');
+                if (placeholder) {
+                    const preview = placeholder.querySelector('img');
+                    const icon = placeholder.querySelector('i');
+                    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+                    if (icon) icon.style.display = 'block';
+                }
+                openModal('addOrgModal');
+            };
             renderOrganizations();
         }
         else if (section === 'officers') {
-            if (mainTitle) mainTitle.innerText = 'Officer Directory';
-            if (actionBtn) {
-                actionBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Officer';
-                actionBtn.onclick = () => openModal('addOfficerModal');
-            }
-            if (mobileActionBtn) {
-                mobileActionBtn.style.display = 'block';
-                mobileActionBtn.innerText = '+ Officer';
-                mobileActionBtn.onclick = () => openModal('addOfficerModal');
-            }
+            mainTitle.innerText = 'Officer Directory';
+            actionBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Officer';
+            actionBtn.onclick = () => {
+                const form = document.getElementById('officerForm');
+                if (form) form.reset();
+                const placeholder = document.querySelector('#addOfficerModal .avatar-upload-placeholder');
+                if (placeholder) {
+                    const preview = placeholder.querySelector('img');
+                    const icon = placeholder.querySelector('i');
+                    if (preview) { preview.src = ''; preview.style.display = 'none'; }
+                    if (icon) icon.style.display = 'block';
+                }
+                openModal('addOfficerModal');
+            };
             renderOfficers();
         }
         else if (section === 'students') {
-            if (mainTitle) mainTitle.innerText = 'Student Directory';
-            if (actionBtn) {
-                actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Student';
-                actionBtn.onclick = () => window.openAddStudentModal();
-            }
-            if (mobileActionBtn) {
-                mobileActionBtn.style.display = 'block';
-                mobileActionBtn.innerText = '+ Student';
-                mobileActionBtn.onclick = () => window.openAddStudentModal();
-            }
+            mainTitle.innerText = 'Student Directory';
+            actionBtn.innerHTML = '<i class="fas fa-plus"></i> Add Student';
+            actionBtn.onclick = () => window.openAddStudentModal();
             renderStudents();
         }
         else if (section === 'reports') {
-            if (mainTitle) mainTitle.innerText = 'System Reports';
-            if (actionBtn) actionBtn.style.display = 'none';
-            if (mobileActionBtn) mobileActionBtn.style.display = 'none';
+            mainTitle.innerText = 'System Reports';
+            actionBtn.style.display = 'none';
             renderReports();
         }
         else if (section === 'audit') {
-            if (mainTitle) mainTitle.innerText = 'System Audit Logs';
-            if (actionBtn) actionBtn.style.display = 'none';
-            if (mobileActionBtn) mobileActionBtn.style.display = 'none';
+            mainTitle.innerText = 'System Audit Logs';
+            actionBtn.style.display = 'none';
             renderAuditLogs();
         }
     };

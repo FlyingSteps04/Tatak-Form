@@ -834,106 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    /**
-     * Resets all navigation states for both desktop and mobile.
-     */
-    const resetNavigation = () => {
-        [sectionOverview, sectionEvents, sectionHistory, sectionReports].forEach(sec => {
-            if (sec) sec.style.display = 'none';
-        });
-        
-        // Reset desktop nav
-        [navOverview, navEvents, navHistory, navReports].forEach(nav => {
-            if (nav) nav.classList.remove('active');
-        });
-
-        // Reset mobile bottom nav
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-    };
-
-    /**
-     * Shows a specific section and persists the state.
-     */
-    window.showSection = (sectionId) => {
-        resetNavigation();
-        
-        const title = document.getElementById('dynamic-title');
-        const sub = document.getElementById('dynamic-subtitle');
-
-        // Mapping for mobile IDs
-        const mobileIdMap = {
-            'nav-overview': 'mobile-nav-overview',
-            'nav-events': 'mobile-nav-events',
-            'nav-history': 'mobile-nav-history',
-            'nav-reports': 'mobile-nav-reports'
-        };
-
-        if (sectionId === 'nav-overview') {
-            if (navOverview) navOverview.classList.add('active');
-            const mTab = document.getElementById(mobileIdMap[sectionId]);
-            if (mTab) mTab.classList.add('active');
-
-            if (sectionOverview) sectionOverview.style.display = 'block';
-            loadOverview();
-        } 
-        else if (sectionId === 'nav-events') {
-            if (navEvents) navEvents.classList.add('active');
-            const mTab = document.getElementById(mobileIdMap[sectionId]);
-            if (mTab) mTab.classList.add('active');
-
-            if (sectionEvents) sectionEvents.style.display = 'block';
-            if (title) title.textContent = 'Events';
-            if (sub) sub.textContent = 'Discover and participate in university events';
-            loadEvents();
-        }
-        else if (sectionId === 'nav-history') {
-            if (navHistory) navHistory.classList.add('active');
-            const mTab = document.getElementById(mobileIdMap[sectionId]);
-            if (mTab) mTab.classList.add('active');
-
-            if (sectionHistory) sectionHistory.style.display = 'block';
-            if (title) title.textContent = 'My Attendance History';
-            if (sub) sub.textContent = 'Review your participation across all events';
-            loadStudentAttendance();
-        }
-        else if (sectionId === 'nav-reports') {
-            if (navReports) navReports.classList.add('active');
-            const mTab = document.getElementById(mobileIdMap[sectionId]);
-            if (mTab) mTab.classList.add('active');
-
-            if (sectionReports) sectionReports.style.display = 'block';
-            if (title) title.textContent = 'Reports & Certificates';
-            if (sub) sub.textContent = 'Download official certificates and track your progress';
-            loadStudentReports();
-        }
-
-        localStorage.setItem('student_last_section', sectionId);
-    };
-
-    // Logout Handling
-    const openLogout = (e) => {
-        if (e) e.preventDefault();
-        if (modal) modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; 
-    };
-
-    if (sidebarLogout) sidebarLogout.addEventListener('click', openLogout);
-    if (topbarLogout) topbarLogout.addEventListener('click', openLogout);
-    
-    // Mobile logout
-    const mobileLogoutBtn = document.querySelector('.mobile-dashboard-header .mobile-icon-btn:last-child');
-    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', openLogout);
-
-    if (stayBtn) stayBtn.addEventListener('click', () => {
-        if (modal) modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
-
-    if (confirmBtn) confirmBtn.addEventListener('click', performLogout);
-
-    // Initial Load
+    // Initial authentication check then load profile
     ensureStudentAuthenticated();
     loadUserInfo().then(async () => {
         const lastSection = localStorage.getItem('student_last_section') || 'nav-overview';
@@ -945,6 +846,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setupStudentCertificateButtons();
     });
 
+    // Global click handler for closing logout modal by clicking outside.
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) hideModal();
+    });
     // Check for pending notifications
     if (window.TatakApi && window.TatakApi.checkPendingToast) {
         window.TatakApi.checkPendingToast();

@@ -602,6 +602,18 @@ body {
     overflow-x: hidden;
 }
 
+/* RESPONSIVE UTILITIES */
+.mobile-only { display: none !important; }
+.desktop-only { display: block !important; }
+
+@media (max-width: 768px) {
+    .mobile-only { display: block !important; }
+    .desktop-only { display: none !important; }
+    
+    .mobile-only.flex { display: flex !important; }
+    .mobile-only.grid { display: grid !important; }
+}
+
 .navbar {
     position: fixed;
     top: 0;
