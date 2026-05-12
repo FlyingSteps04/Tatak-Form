@@ -217,13 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.formatImageUrl = (url) => {
-        if (!url) return '';
-        if (typeof url === 'string' && url.startsWith('/uploads')) {
-            return `${window.TatakApi.API_BASE_URL}${url}`;
-        }
-        return url;
-    };
+    window.formatImageUrl = window.TatakApi.formatImageUrl;
 
     window.openEditOrgModal = (id, name, desc, status, logo) => {
         document.getElementById('editOrgOldId').value = id;
@@ -1499,13 +1493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function formatImageUrl(path) {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        const apiBase = window.TatakApi ? window.TatakApi.API_BASE_URL : 'http://localhost:3002';
-        const cleanPath = path.startsWith('/') ? path : `/${path}`;
-        return `${apiBase}${cleanPath}`;
-    }
+    const formatImageUrl = window.TatakApi.formatImageUrl;
 
     async function loadAdminOfficersTable() {
         const tbody = document.getElementById('admin-officers-table-body');

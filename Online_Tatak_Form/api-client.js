@@ -96,6 +96,39 @@ function checkPendingToast() {
     }
 }
 
+/**
+ * Formats image URLs by prepending the API base URL only when necessary.
+ * Handles local assets, backend uploads, and full external URLs.
+ */
+function formatImageUrl(path) {
+    if (!path) return '';
+    if (typeof path !== 'string') return '';
+    
+    // Return as is if it's already a full URL or a data URI
+    if (path.startsWith('http') || path.startsWith('data:')) {
+        return path;
+    }
+
+    // List of known local asset filenames that should load from the frontend origin
+    const localAssets = [
+        '655609284_1426759675272887_2726655014418430573_n.png'
+    ];
+
+    if (localAssets.includes(path)) {
+        return path;
+    }
+
+    // If it starts with /uploads or uploads/, it's a backend asset
+    if (path.startsWith('/uploads') || path.startsWith('uploads/')) {
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        return `${API_BASE_URL}${cleanPath}`;
+    }
+
+    // Fallback: If it's a relative path without 'uploads', it's likely a local asset
+    // or a malformed upload. We default to returning it as is to allow local fallbacks.
+    return path;
+}
+
 function showToast(message, type = 'info') {
     // Inject styles if missing
     if (!document.getElementById('tatak-toast-styles')) {
@@ -151,7 +184,8 @@ window.TatakApi = {
     apiRequest,
     showToast,
     setPendingToast,
-    clearPendingToast
+    clearPendingToast,
+    formatImageUrl
 };
 
 // Auto-check for pending toasts on every load

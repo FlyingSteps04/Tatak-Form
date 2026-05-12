@@ -170,10 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (logoWrap) {
                     if (org.logo) {
-                        // Match admin.js logic for logo formatting
-                        const apiBase = window.TatakApi ? window.TatakApi.API_BASE_URL : 'http://localhost:3002';
-                        const cleanPath = org.logo.startsWith('/') ? org.logo : `/${org.logo}`;
-                        const logoUrl = org.logo.startsWith('http') ? org.logo : `${apiBase}${cleanPath}`;
+                        const logoUrl = window.TatakApi.formatImageUrl(org.logo);
                         logoWrap.innerHTML = `<img src="${logoUrl}" alt="Logo" onerror="this.src='655609284_1426759675272887_2726655014418430573_n.png'">`;
                     } else {
                         logoWrap.innerHTML = `<div class="org-logo-circle" style="width: 100%; height: 100%; background: var(--uc-yellow); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem;">${acronym}</div>`;

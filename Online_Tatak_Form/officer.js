@@ -1,11 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const formatImageUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('/uploads')) {
-            return `${window.TatakApi.API_BASE_URL}${url}`;
-        }
-        return url;
-    };
+    const formatImageUrl = window.TatakApi.formatImageUrl;
 
     const logoutModal = document.getElementById('logoutModal');
     // Updated to match the new HTML IDs
