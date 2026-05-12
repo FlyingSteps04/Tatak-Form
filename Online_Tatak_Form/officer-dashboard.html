@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="officer.css">
     <link rel="stylesheet" href="mobile-dashboards.css">
+    
+    <!-- Mobile Redirection -->
+    <script>
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768) {
+            window.location.href = 'mobile_view/officer.html';
+        }
+    </script>
 </head>
 <body>
     <div class="dashboard-container">

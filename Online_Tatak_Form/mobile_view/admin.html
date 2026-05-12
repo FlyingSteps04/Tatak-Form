@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Dashboard - Mobile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .admin-action-btn {
+            background: var(--mobile-accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <header class="mobile-header">
+        <div class="header-left">
+            <div class="header-logo">
+                <img src="../assets/logo.png" alt="" style="width:100%; height:100%; object-fit:contain;">
+            </div>
+            <div class="header-title">ADMIN PORTAL</div>
+        </div>
+        <div class="header-actions">
+            <button class="admin-action-btn" id="mobileNewEvent">+ NEW</button>
+            <button class="header-btn" id="mobileLogout"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Overview Section -->
+        <section id="section-overview">
+            <h1 class="section-title">Hello, <span class="highlight">Admin</span></h1>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value">24</span>
+                    <span class="stat-label">Total Events</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">1,240</span>
+                    <span class="stat-label">Total Students</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">15</span>
+                    <span class="stat-label">Organizations</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">42</span>
+                    <span class="stat-label">Officers</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 15px;">System Performance</h3>
+                <div style="height: 150px; display: flex; align-items: flex-end; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+                    <div style="flex: 1; height: 60%; background: #e2e8f0; border-radius: 5px 5px 0 0;"></div>
+                    <div style="flex: 1; height: 80%; background: var(--mobile-primary); border-radius: 5px 5px 0 0;"></div>
+                    <div style="flex: 1; height: 40%; background: #e2e8f0; border-radius: 5px 5px 0 0;"></div>
+                    <div style="flex: 1; height: 90%; background: var(--mobile-primary); border-radius: 5px 5px 0 0;"></div>
+                    <div style="flex: 1; height: 70%; background: #e2e8f0; border-radius: 5px 5px 0 0;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.7rem; color: var(--mobile-text-light);">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Events Section -->
+        <section id="section-events" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 class="section-title" style="margin: 0;">Events</h1>
+                <div style="background: white; border-radius: 10px; padding: 5px 10px; border: 1px solid var(--mobile-border);">
+                    <i class="fas fa-search" style="font-size: 0.8rem; color: #94a3b8;"></i>
+                </div>
+            </div>
+            <div id="events-list"></div>
+        </section>
+
+        <!-- Orgs Section -->
+        <section id="section-orgs" style="display: none;">
+            <h1 class="section-title">Organizations</h1>
+            <div id="orgs-list"></div>
+        </section>
+
+        <!-- Officers Section -->
+        <section id="section-officers" style="display: none;">
+            <h1 class="section-title">Officers</h1>
+            <div id="officers-list"></div>
+        </section>
+
+        <!-- Students Section -->
+        <section id="section-students" style="display: none;">
+            <h1 class="section-title">Students</h1>
+            <div id="students-list"></div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="section-reports" style="display: none;">
+            <h1 class="section-title">Reports</h1>
+            <div id="reports-list"></div>
+        </section>
+    </main>
+
+    <nav class="mobile-nav">
+        <a href="#" class="nav-item active" data-section="overview">
+            <i class="fas fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-section="events">
+            <i class="fas fa-calendar-check"></i>
+            <span>Events</span>
+        </a>
+        <a href="#" class="nav-item" data-section="orgs">
+            <i class="fas fa-users"></i>
+            <span>Orgs</span>
+        </a>
+        <a href="#" class="nav-item" data-section="officers">
+            <i class="fas fa-user-shield"></i>
+            <span>Officers</span>
+        </a>
+        <a href="#" class="nav-item" data-section="students">
+            <i class="fas fa-user-graduate"></i>
+            <span>Students</span>
+        </a>
+    </nav>
+
+    <script src="../script.js"></script>
+    <script src="js/mobile-router.js"></script>
+    <script src="js/mobile-admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    const sectionId = item.dataset.section;
+                    document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+                    const targetSection = document.getElementById(`section-${sectionId}`);
+                    if (targetSection) targetSection.style.display = 'block';
+                });
+            });
+
+            // Initial check
+            const role = localStorage.getItem('tatak_role');
+            if (role !== 'Admin') window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
