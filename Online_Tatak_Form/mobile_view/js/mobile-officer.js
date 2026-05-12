@@ -69,17 +69,22 @@ const MobileOfficer = {
                 list.innerHTML = rows.map(r => `
                     <div class="data-card">
                         <div class="data-avatar">
-                            <img src="${window.TatakApi.formatImageUrl(r.profile_picture)}" style="width:100%;" onerror="this.src='https://via.placeholder.com/50'">
+                            <img src="${window.TatakApi.formatImageUrl(r.profile_picture)}" style="width:100%; height:100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/50'">
                         </div>
                         <div class="data-info">
                             <div class="data-name">${r.fname} ${r.lname}</div>
                             <div class="data-meta">${r.id_number}</div>
+                            <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">
+                                <i class="far fa-clock"></i> ${new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
                         </div>
-                        <span class="data-badge" style="background: #dcfce7; color: #16a34a;">${r.status}</span>
+                        <span class="data-badge" style="background: ${r.status === 'Present' ? '#dcfce7' : r.status === 'Late' ? '#fef3c7' : '#fee2e2'}; color: ${r.status === 'Present' ? '#16a34a' : r.status === 'Late' ? '#d97706' : '#ef4444'}; font-weight: 800;">
+                            ${r.status.toUpperCase()}
+                        </span>
                     </div>
                 `).join('');
             } else {
-                list.innerHTML = '<p>No active events for attendance tracking.</p>';
+                list.innerHTML = '<p style="text-align:center; padding:20px; color:#64748b;">No active events for attendance tracking.</p>';
             }
         } catch (e) {
             list.innerHTML = '<p>Error loading attendance</p>';

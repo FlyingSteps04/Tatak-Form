@@ -610,6 +610,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mobileActionBtn) mobileActionBtn.style.display = 'none';
             renderReports();
         }
+        else if (section === 'audit') {
+            if (mainTitle) mainTitle.innerText = 'System Audit Logs';
+            if (actionBtn) actionBtn.style.display = 'none';
+            if (mobileActionBtn) mobileActionBtn.style.display = 'none';
+            renderAuditLogs();
+        }
     };
 
     // --- RENDER FUNCTIONS ---

@@ -80,15 +80,15 @@ const MobileStudent = {
             
             list.innerHTML = rows.map(r => `
                 <div class="data-card">
-                    <div class="data-avatar" style="background: #f1f5f9; color: #0B1E4C;">
-                        <i class="fas fa-history"></i>
+                    <div class="data-avatar" style="background: ${r.status === 'Present' ? '#dcfce7' : r.status === 'Late' ? '#fef3c7' : '#fee2e2'}; color: ${r.status === 'Present' ? '#16a34a' : r.status === 'Late' ? '#d97706' : '#ef4444'};">
+                        <i class="fas ${r.status === 'Present' ? 'fa-check-circle' : r.status === 'Late' ? 'fa-clock' : 'fa-times-circle'}"></i>
                     </div>
                     <div class="data-info">
                         <div class="data-name">${r.event_name}</div>
-                        <div class="data-meta">${new Date(r.timestamp).toLocaleDateString()}</div>
+                        <div class="data-meta">${new Date(r.timestamp).toLocaleDateString()} • ${new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
-                    <span class="data-badge" style="background: ${r.status === 'Present' ? '#dcfce7' : '#fee2e2'}; color: ${r.status === 'Present' ? '#16a34a' : '#ef4444'};">
-                        ${r.status}
+                    <span class="data-badge" style="background: ${r.status === 'Present' ? '#dcfce7' : r.status === 'Late' ? '#fef3c7' : '#fee2e2'}; color: ${r.status === 'Present' ? '#16a34a' : r.status === 'Late' ? '#d97706' : '#ef4444'}; font-weight: 800;">
+                        ${r.status.toUpperCase()}
                     </span>
                 </div>
             `).join('');

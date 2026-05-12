@@ -135,3 +135,44 @@ document.addEventListener('DOMContentLoaded', () => {
         MobileAdmin.init();
     }
 });
+
+    MobileAdmin.loadAuditLogs = async function() {
+        const list = document.getElementById("audit-list");
+        if (!list) return;
+
+        try {
+            const res = await window.TatakApi.apiRequest("/logs");
+            const logs = res.data || [];
+            
+            list.innerHTML = logs.map(log => `
+                <div class="data-card">
+                    <div class="data-avatar" style="background: #f1f5f9; color: #0B1E4C;">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <div class="data-info">
+                        <div class="data-name">${log.fname || "System"} <span style="font-size: 0.7rem; color: #64748b; font-weight: 400;">(${log.role || "Admin"})</span></div>
+                        <div class="data-meta">${new Date(log.timestamp).toLocaleString()}</div>
+                        <div style="margin-top: 5px; font-weight: 600; color: #2563eb; font-size: 0.75rem;">${log.action}</div>
+                        <div style="font-size: 0.7rem; color: #475569; margin-top: 2px;">${log.target_name || log.table_name || "System Action"}</div>
+                    </div>
+                </div>
+            `).join("");
+        } catch (e) {
+            list.innerHTML = "<p>Error loading audit logs</p>";
+        }
+    };
+
+    // Auto-load audit logs when section is shown
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === "section-audit" && mutation.target.style.display === "block") {
+                MobileAdmin.loadAuditLogs();
+            }
+        });
+    });
+
+    const auditSection = document.getElementById("section-audit");
+    if (auditSection) {
+        observer.observe(auditSection, { attributes: true, attributeFilter: ["style"] });
+    }
+
