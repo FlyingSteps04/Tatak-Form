@@ -1350,7 +1350,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </td>
                             <td class="text-center"><span class="badge-org">${orgName}</span></td>
-                            <td class="text-center">${start.toLocaleDateString()}</td>
+                            <td class="text-center">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span style="font-weight: 600;">${start.toLocaleDateString()}</span>
+                                    <span style="font-size: 0.75rem; color: #64748b;">${window.TatakApi.formatTime12h(start)}</span>
+                                </div>
+                            </td>
                             <td class="text-center">${event.location || 'TBA'}</td>
                             <td class="text-center"><span class="status ${statusCls}">${status}</span></td>
                             <td class="text-center">
@@ -1920,8 +1925,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         organization_id: document.getElementById('addEventOrg').value,
                         name: document.getElementById('addEventName').value,
-                        start_date: document.getElementById('addEventDate').value + ' ' + document.getElementById('addEventStartTime').value,
-                        end_date: document.getElementById('addEventDate').value + ' ' + document.getElementById('addEventEndTime').value,
+                        start_date: new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventStartTime').value + ':00').toISOString(),
+                        end_date: document.getElementById('addEventEndTime').value ? new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventEndTime').value + ':00').toISOString() : null,
                         location: document.getElementById('addEventVenue').value,
                         expected_attendance: document.getElementById('addEventCapacity').value || null
                     })
@@ -1956,8 +1961,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'PUT',
                     body: JSON.stringify({
                         name: document.getElementById('editEventName').value,
-                        start_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventStartTime').value,
-                        end_date: document.getElementById('editEventDate').value + ' ' + document.getElementById('editEventEndTime').value,
+                        start_date: new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventStartTime').value + ':00').toISOString(),
+                        end_date: document.getElementById('editEventEndTime').value ? new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventEndTime').value + ':00').toISOString() : null,
                         location: document.getElementById('editEventVenue').value,
                         expected_attendance: document.getElementById('editEventCapacity').value || null,
                         organization_id: document.getElementById('editEventOrg').value

@@ -177,6 +177,17 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
+function formatTime12h(date) {
+    if (!date || !(date instanceof Date) || isNaN(date)) return '---';
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return hours + ':' + minutes + ' ' + ampm;
+}
+
 window.TatakApi = {
     API_BASE_URL,
     getAuthToken,
@@ -185,7 +196,8 @@ window.TatakApi = {
     showToast,
     setPendingToast,
     clearPendingToast,
-    formatImageUrl
+    formatImageUrl,
+    formatTime12h
 };
 
 // Auto-check for pending toasts on every load

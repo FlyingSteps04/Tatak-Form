@@ -1117,9 +1117,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Determine local date and time for form population
                 const localDate = s.getFullYear() + '-' + String(s.getMonth() + 1).padStart(2, '0') + '-' + String(s.getDate()).padStart(2, '0');
-                const startTime = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
-                const endTime = ev.end_date ? (new Date(ev.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(ev.end_date).getMinutes().toString().padStart(2, '0')) : '';
+                const startTimeInput = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
+                const endTimeInput = ev.end_date ? (new Date(ev.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(ev.end_date).getMinutes().toString().padStart(2, '0')) : '';
                 
+                // 12-hour display format
+                const startTimeDisplay = window.TatakApi.formatTime12h(s);
+
                 const safeName = (ev.name||'').replace(/'/g, "\\'");
                 const safeLoc = (ev.location||'').replace(/'/g, "\\'");
                 const safeDesc = (ev.description||'').replace(/'/g, "\\'");
@@ -1134,12 +1137,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
-                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
+                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTimeInput}', '${endTimeInput}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
                                     <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
                             </div>
                         </div>
-                        <p class="event-meta" style="margin-top: 15px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTime}</p>
+                        <p class="event-meta" style="margin-top: 15px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTimeDisplay}</p>
                         <div class="progress-container" style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <p style="font-size: 12px; color: #64748b; margin: 0;">Attendance Tracking</p>
@@ -1289,8 +1292,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const capacity = document.getElementById('officerEventCapacity')?.value;
 
             // Combine date and time for backend
-            const startDate = `${date}T${startTime}:00`;
-            const endDate = endTime ? `${date}T${endTime}:00` : null;
+            // Combine date and time and convert to ISO (UTC) to prevent timezone drift
+            const startDate = new Date(`${date}T${startTime}:00`).toISOString();
+            const endDate = endTime ? new Date(`${date}T${endTime}:00`).toISOString() : null;
 
             const payload = {
                 name: name,
