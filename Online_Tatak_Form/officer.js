@@ -1122,6 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 12-hour display format
                 const startTimeDisplay = window.TatakApi.formatTime12h(s);
+                const endTimeDisplay = ev.end_date ? window.TatakApi.formatTime12h(end) : 'TBA';
 
                 const safeName = (ev.name||'').replace(/'/g, "\\'");
                 const safeLoc = (ev.location||'').replace(/'/g, "\\'");
@@ -1142,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                         </div>
-                        <p class="event-meta" style="margin-top: 15px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTimeDisplay}</p>
+                        <p class="event-meta" style="margin-top: 15px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTimeDisplay} - ${endTimeDisplay}</p>
                         <div class="progress-container" style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <p style="font-size: 12px; color: #64748b; margin: 0;">Attendance Tracking</p>

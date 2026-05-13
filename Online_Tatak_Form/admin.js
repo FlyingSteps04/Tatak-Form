@@ -1325,8 +1325,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const orgLogo = orgObj?.logo || '655609284_1426759675272887_2726655014418430573_n.png';
                     
                     const localDate = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
-                    const startTime = start.getHours().toString().padStart(2, '0') + ':' + start.getMinutes().toString().padStart(2, '0');
-                    const endTime = event.end_date ? (new Date(event.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(event.end_date).getMinutes().toString().padStart(2, '0')) : '';
+                    const startTimeInput = start.getHours().toString().padStart(2, '0') + ':' + start.getMinutes().toString().padStart(2, '0');
+                    const endTimeInput = event.end_date ? (new Date(event.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(event.end_date).getMinutes().toString().padStart(2, '0')) : '';
+
+                    const startTimeDisplay = window.TatakApi.formatTime12h(start);
+                    const endTimeDisplay = event.end_date ? window.TatakApi.formatTime12h(new Date(event.end_date)) : 'TBA';
 
                     let actionHtml = '';
                     if (event.approval_status === 'Pending') {
@@ -1336,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     } else {
                         actionHtml = `
-                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${localDate}', '${(event.location || '').replace(/'/g, "\\'")}', '${startTime}', '${endTime}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
+                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${localDate}', '${(event.location || '').replace(/'/g, "\\'")}', '${startTimeInput}', '${endTimeInput}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
                             <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
                         `;
                     }
@@ -1353,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td class="text-center">
                                 <div style="display: flex; flex-direction: column; align-items: center;">
                                     <span style="font-weight: 600;">${start.toLocaleDateString()}</span>
-                                    <span style="font-size: 0.75rem; color: #64748b;">${window.TatakApi.formatTime12h(start)}</span>
+                                    <span style="font-size: 0.75rem; color: #64748b;">${startTimeDisplay} - ${endTimeDisplay}</span>
                                 </div>
                             </td>
                             <td class="text-center">${event.location || 'TBA'}</td>
