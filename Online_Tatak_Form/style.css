@@ -949,96 +949,43 @@ section {
 }
 
 .forgot-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    width: min(1200px, 100%);
-    background: transparent;
-    align-items: center;
-}
-
-.forgot-left {
-    border-radius: 32px;
-    padding: 42px 44px;
-    background: linear-gradient(180deg, #1d4ed8 0%, #2563eb 100%);
-    color: white;
     display: flex;
-    flex-direction: column;
     justify-content: center;
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-    min-height: 520px;
-}
-
-.back-link {
-    position: absolute;
-    top: 32px;
-    left: 32px;
-    color: rgba(255,255,255,0.95);
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-}
-
-.back-link i {
-    font-size: 0.95rem;
-}
-
-.forgot-hero {
-    max-width: 520px;
-}
-
-.forgot-hero .hero-icon {
-    width: 72px;
-    height: 72px;
-    border-radius: 24px;
-    background: rgba(255,255,255,0.15);
-    display: grid;
-    place-items: center;
-    font-size: 1.9rem;
-    margin-bottom: 28px;
-}
-
-.forgot-left h1 {
-    font-size: clamp(3rem, 4vw, 4.2rem);
-    margin-bottom: 22px;
-    line-height: 1.05;
-}
-
-.forgot-left p {
-    max-width: 520px;
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: rgba(255,255,255,0.92);
-    margin-bottom: 40px;
-}
-
-.hero-stats {
-    display: grid;
-    gap: 22px;
-}
-
-.hero-stats span {
-    display: block;
-    font-size: 0.95rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.hero-stats p {
-    color: rgba(255,255,255,0.76);
-    margin: 0;
-    max-width: 420px;
+    min-height: 100vh;
+    width: 100%;
+    background: #f8fafc; /* Light background for contrast */
 }
 
 .forgot-right {
+    width: 100%;
     display: flex;
-    align-items: center;
     justify-content: center;
+    padding: 20px;
+}
+
+.back-link-inside {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+}
+
+.back-link-inside:hover {
+    color: #1d4ed8;
+}
+
+.forgot-right {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    align-items: center;
 }
 
 .reset-card {
@@ -1273,13 +1220,8 @@ section {
 
 @media (max-width: 1060px) {
     .forgot-wrapper {
-        grid-template-columns: 1fr;
-        gap: 28px;
-    }
-
-    .forgot-left {
-        padding: 40px 32px;
-        border-radius: 28px;
+        gap: 20px;
+        padding: 15px;
     }
 
     .reset-card {
@@ -1288,7 +1230,7 @@ section {
 }
 
 @media (max-width: 720px) {
-    .forgot-left, .reset-card {
+    .reset-card {
         border-radius: 24px;
     }
 
