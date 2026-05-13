@@ -1324,6 +1324,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const orgName = event.organization_name || orgObj?.name || 'N/A';
                     const orgLogo = orgObj?.logo || '655609284_1426759675272887_2726655014418430573_n.png';
                     
+                    const localDate = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
+                    const startTime = start.getHours().toString().padStart(2, '0') + ':' + start.getMinutes().toString().padStart(2, '0');
+                    const endTime = event.end_date ? (new Date(event.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(event.end_date).getMinutes().toString().padStart(2, '0')) : '';
+
                     let actionHtml = '';
                     if (event.approval_status === 'Pending') {
                         actionHtml = `
@@ -1332,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     } else {
                         actionHtml = `
-                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${event.start_date.split('T')[0]}', '${(event.location || '').replace(/'/g, "\\'")}', '${new Date(event.start_date).toTimeString().slice(0,5)}', '${event.end_date ? new Date(event.end_date).toTimeString().slice(0,5) : ''}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
+                            <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${localDate}', '${(event.location || '').replace(/'/g, "\\'")}', '${startTime}', '${endTime}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
                             <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
                         `;
                     }
@@ -1562,7 +1566,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); overflow: hidden;">${avatarContent}</div>
                                     <div style="display: flex; flex-direction: column;">
                                         <strong style="color: #1e293b; font-size: 0.95rem;">${fullName}</strong>
-                                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">ID: ${off.stud_id_number || '---'}</span>
                                     </div>
                                 </div>
                             </td>
@@ -1614,7 +1617,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.getElementById('admin-students-total')) document.getElementById('admin-students-total').innerText = students.length.toLocaleString();
             if(document.getElementById('admin-students-enrolled')) document.getElementById('admin-students-enrolled').innerText = (students.length * 1.5).toFixed(0);
             
-            const avgRate = summary.total > 0 ? Math.round((summary.present_count / summary.total) * 100) : 92;
+            const totalExpected = events.reduce((sum, e) => sum + (e.expected_attendance || 0), 0);
+            const totalPresent = (summary.present_count || 0) + (summary.late_count || 0);
+            const avgRate = totalExpected > 0 ? Math.round((totalPresent / totalExpected) * 100) : 0;
             if(document.getElementById('admin-students-attendance')) document.getElementById('admin-students-attendance').innerText = `${avgRate}%`;
 
             // Setup filters
@@ -1677,7 +1682,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 (s.stud_id_number || '').toLowerCase().includes(searchQuery)
             );
         }
+
+        // Update Top Stats Cards reactively
+        if (document.getElementById('admin-students-total')) {
+            document.getElementById('admin-students-total').innerText = filteredStudents.length.toLocaleString();
+        }
+        if (document.getElementById('admin-students-enrolled')) {
+            // Simulated enrollment ratio for UI aesthetics
+            document.getElementById('admin-students-enrolled').innerText = (filteredStudents.length * 1.5).toFixed(0);
+        }
         
+        const avgAttendanceEl = document.getElementById('admin-students-attendance');
+        if (avgAttendanceEl) {
+            const now = new Date();
+            let totalPercentage = 0;
+            let studentCount = filteredStudents.length;
+
+            if (studentCount > 0) {
+                filteredStudents.forEach(student => {
+                    if (eventId !== 'all') {
+                        const record = studentDataCache.attendanceRecords.find(a => String(a.user_id) === String(student.id) && String(a.event_id) === String(eventId));
+                        if (record && ['Present', 'Late'].includes(record.status)) {
+                            totalPercentage += 100;
+                        }
+                    } else {
+                        const orgEvents = studentDataCache.events.filter(e => String(e.organization_id) === String(student.organization_id) && new Date(e.start_date) <= now);
+                        if (orgEvents.length > 0) {
+                            const orgEventIds = orgEvents.map(e => String(e.event_id));
+                            const studentRecords = studentDataCache.attendanceRecords.filter(a => String(a.user_id) === String(student.id) && orgEventIds.includes(String(a.event_id)));
+                            const attendedCount = studentRecords.filter(a => ['Present', 'Late'].includes(a.status)).length;
+                            totalPercentage += (attendedCount / orgEvents.length) * 100;
+                        } else {
+                            // If no events for this student's org yet, we don't count them in the average to avoid dragging it down to 0% unfairly
+                            studentCount--; 
+                        }
+                    }
+                });
+                const finalAvg = studentCount > 0 ? Math.round(totalPercentage / studentCount) : 0;
+                avgAttendanceEl.innerText = `${finalAvg}%`;
+            } else {
+                avgAttendanceEl.innerText = '0%';
+            }
+        }
+
         if (filteredStudents.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;">No students found.</td></tr>';
             return;

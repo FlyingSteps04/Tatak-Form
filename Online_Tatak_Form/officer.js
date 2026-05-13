@@ -1115,10 +1115,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (now >= s && now <= end) { badgeClass = 'badge-open'; badgeText = 'Open'; }
                 else if (now < s) { badgeClass = 'badge-upcoming'; badgeText = 'Upcoming'; }
 
-                // Determine start and end times for form population
-                const startTime = s.toTimeString().slice(0, 5); // "HH:MM"
-                const endTime = ev.end_date ? new Date(ev.end_date).toTimeString().slice(0, 5) : '';
-                const dateStr = s.toISOString().split('T')[0];
+                // Determine local date and time for form population
+                const localDate = s.getFullYear() + '-' + String(s.getMonth() + 1).padStart(2, '0') + '-' + String(s.getDate()).padStart(2, '0');
+                const startTime = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
+                const endTime = ev.end_date ? (new Date(ev.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(ev.end_date).getMinutes().toString().padStart(2, '0')) : '';
                 
                 const safeName = (ev.name||'').replace(/'/g, "\\'");
                 const safeLoc = (ev.location||'').replace(/'/g, "\\'");
@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
-                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${dateStr}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
+                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTime}', '${endTime}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
                                     <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
                             </div>
