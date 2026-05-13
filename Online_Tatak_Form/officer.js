@@ -1130,16 +1130,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `
                     <div class="event-card">
-                        <div class="card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 150px;">
-                                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; line-height: 1.3;">${ev.name}</h3>
+                        <div class="card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 120px; overflow: hidden;">
+                                <h3 style="margin: 0; font-size: 1.05rem; color: #1e293b; line-height: 1.2; word-break: break-word;">${ev.name}</h3>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto;">
-                                <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
-                                <div class="card-header-actions" style="display: flex; gap: 6px;">
-                                    <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
-                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTimeInput}', '${endTimeInput}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
-                                    <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                                <span class="badge ${badgeClass}" style="white-space: nowrap; padding: 3px 8px; font-size: 10px;">${badgeText}</span>
+                                <div class="card-header-actions" style="display: flex; gap: 4px;">
+                                    <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 12px;"></i></button>
+                                    <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTimeInput}', '${endTimeInput}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 12px;"></i></button>
+                                    <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 12px;"></i></button>
                                 </div>
                             </div>
                         </div>
