@@ -130,7 +130,7 @@ router.get('/users', authenticateToken, authenticateRole("Admin"), async (req, r
     res.json({ success: true, data: users })
 })
 
-router.put('/change-password', authenticateToken, authenticateRole("Student"), async (req, res) => {
+router.put('/change-password', authenticateToken, async (req, res) => {
     const { oldPassword, newPassword} = req.body
     const user = await getUserByID(req.user.id)
 

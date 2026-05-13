@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function formatStudentIdValue(value) {
-        return value.trim() || '12345678';
+    function formatIdentifierValue(value) {
+        return value.trim() || '---';
     }
 
     async function requestResetCode(advance = true) {
-        const studentId = studentIdInput.value.trim();
-        if (!studentId) {
+        const identifier = studentIdInput.value.trim();
+        if (!identifier) {
             studentIdInput.focus();
             return false;
         }
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${apiBaseUrl}/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: studentId })
+                body: JSON.stringify({ id: identifier })
             });
 
             if (!response.ok) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
 
-            studentIdPreview.textContent = formatStudentIdValue(studentId);
+            studentIdPreview.textContent = formatIdentifierValue(identifier);
             if (advance) {
                 showStep(1);
                 codeInputs[0].focus();

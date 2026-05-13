@@ -1130,11 +1130,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `
                     <div class="event-card">
-                        <div class="card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
-                            <div style="flex: 1; min-width: 0;">
-                                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ev.name}">${ev.name}</h3>
+                        <div class="card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; line-height: 1.3;">${ev.name}</h3>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto;">
                                 <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
                                 <div class="card-header-actions" style="display: flex; gap: 6px;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
