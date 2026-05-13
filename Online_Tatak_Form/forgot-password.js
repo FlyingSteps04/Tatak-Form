@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                alert(errorData.error || 'Unable to send verification code.');
+                window.TatakApi.showToast(errorData.error || 'Unable to send verification code.', 'error');
                 return false;
             }
 
@@ -51,11 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (advance) {
                 showStep(1);
                 codeInputs[0].focus();
+                window.TatakApi.showToast('Verification code sent to your registered email.', 'success');
             }
             return true;
         } catch (error) {
             console.error('Forgot password error:', error);
-            alert('Unable to connect to the server. Please try again.');
+            window.TatakApi.showToast('Unable to connect to the server. Please try again.', 'error');
             return false;
         }
     }
@@ -79,17 +80,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPassword = document.getElementById('newPassword').value.trim();
         const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
-        if (newPassword.length < 8 || newPassword !== confirmPassword) {
-            if (newPassword !== confirmPassword) {
-                document.getElementById('confirmPassword').focus();
-            } else {
-                document.getElementById('newPassword').focus();
-            }
+        if (newPassword.length < 8) {
+            window.TatakApi.showToast('Password must be at least 8 characters long.', 'error');
+            document.getElementById('newPassword').focus();
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            window.TatakApi.showToast('Passwords do not match.', 'error');
+            document.getElementById('confirmPassword').focus();
             return;
         }
 
         if (!resetToken) {
-            alert('Please enter the verification code first.');
+            window.TatakApi.showToast('Please enter the verification code first.', 'error');
             showStep(1);
             return;
         }
@@ -103,14 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                alert(errorData.error || 'Unable to reset password.');
+                window.TatakApi.showToast(errorData.error || 'Unable to reset password.', 'error');
                 return;
             }
 
+            window.TatakApi.showToast('Password reset successful! Redirecting to login...', 'success');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
             showStep(3);
         } catch (error) {
             console.error('Reset password error:', error);
-            alert('Unable to connect to the server. Please try again.');
+            window.TatakApi.showToast('Unable to connect to the server. Please try again.', 'error');
         }
     });
 
