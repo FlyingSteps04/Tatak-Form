@@ -478,6 +478,23 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openModal('deleteOfficerModal');
     };
 
+    // QR Modal Logic
+    window.showEventQR = (qrUrl, eventName) => {
+        const modal = document.getElementById('qrDisplayModal');
+        const img = document.getElementById('qrDisplayImg');
+        const title = document.getElementById('qrModalEventName');
+        
+        if (!qrUrl) {
+            window.TatakApi.showToast('QR code not generated for this event yet.', 'info');
+            return;
+        }
+
+        const fullUrl = window.TatakApi.formatImageUrl(qrUrl);
+        img.src = fullUrl;
+        title.textContent = eventName;
+        window.openModal('qrDisplayModal');
+    };
+
     const contentDiv = document.getElementById('dynamic-content');
     const mainTitle = document.getElementById('main-title');
     const actionBtn = document.getElementById('action-btn');
@@ -1339,6 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     } else {
                         actionHtml = `
+                            <button class="icon-qr" onclick="window.showEventQR('${event.qr_code}', '${event.name.replace(/'/g, "\\'")}')" title="Show QR" style="background: #e0e7ff; color: #4338ca;"><i class="fas fa-qrcode"></i></button>
                             <button class="icon-edit" onclick="window.openEditEventModal('${event.event_id}', '${event.name.replace(/'/g, "\\'")}', '${localDate}', '${(event.location || '').replace(/'/g, "\\'")}', '${startTimeInput}', '${endTimeInput}', '${event.expected_attendance || ''}', '${event.organization_id}')" title="Edit Event"><i class="far fa-edit"></i></button>
                             <button class="icon-delete" onclick="window.openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="far fa-trash-alt"></i></button>
                         `;
@@ -1922,14 +1940,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = addEventForm.querySelector('button[type="submit"]');
             submitBtn.innerText = 'Saving...';
             submitBtn.disabled = true;
+            const startDate = new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventStartTime').value + ':00');
+            const endTimeStr = document.getElementById('addEventEndTime').value;
+            const endDate = endTimeStr ? new Date(document.getElementById('addEventDate').value + 'T' + endTimeStr + ':00') : null;
+
+            if (endDate && endDate <= startDate) {
+                window.TatakApi.showToast('End time must be after start time.', 'error');
+                submitBtn.innerText = 'Save Event';
+                submitBtn.disabled = false;
+                return;
+            }
+
             try {
                 const res = await window.TatakApi.apiRequest('/events', {
                     method: 'POST',
                     body: JSON.stringify({
                         organization_id: document.getElementById('addEventOrg').value,
                         name: document.getElementById('addEventName').value,
-                        start_date: new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventStartTime').value + ':00').toISOString(),
-                        end_date: document.getElementById('addEventEndTime').value ? new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventEndTime').value + ':00').toISOString() : null,
+                        start_date: startDate.toISOString(),
+                        end_date: endDate ? endDate.toISOString() : null,
                         location: document.getElementById('addEventVenue').value,
                         expected_attendance: document.getElementById('addEventCapacity').value || null
                     })
@@ -1959,13 +1988,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = editEventForm.querySelector('button[type="submit"]');
             submitBtn.innerText = 'Updating...';
             submitBtn.disabled = true;
+            const startDate = new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventStartTime').value + ':00');
+            const endTimeStr = document.getElementById('editEventEndTime').value;
+            const endDate = endTimeStr ? new Date(document.getElementById('editEventDate').value + 'T' + endTimeStr + ':00') : null;
+
+            if (endDate && endDate <= startDate) {
+                window.TatakApi.showToast('End time must be after start time.', 'error');
+                submitBtn.innerText = 'Update Event';
+                submitBtn.disabled = false;
+                return;
+            }
+
             try {
                 const res = await window.TatakApi.apiRequest(`/events/${id}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         name: document.getElementById('editEventName').value,
-                        start_date: new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventStartTime').value + ':00').toISOString(),
-                        end_date: document.getElementById('editEventEndTime').value ? new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventEndTime').value + ':00').toISOString() : null,
+                        start_date: startDate.toISOString(),
+                        end_date: endDate ? endDate.toISOString() : null,
                         location: document.getElementById('editEventVenue').value,
                         expected_attendance: document.getElementById('editEventCapacity').value || null,
                         organization_id: document.getElementById('editEventOrg').value

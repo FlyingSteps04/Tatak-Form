@@ -1130,20 +1130,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `
                     <div class="event-card">
-                        <div class="card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">${ev.name}</h3>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                                <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
-                                <div class="card-header-actions" style="display: flex; gap: 6px;">
+                        <div class="card-top" style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; line-height: 1.3;">${ev.name}</h3>
+                                <div class="card-header-actions" style="display: flex; gap: 6px; flex-shrink: 0;">
                                     <button class="icon-qr" onclick="window.showEventQR('${ev.qr_code}', '${safeName}')" style="background: #e0e7ff; border: none; color: #4338ca; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Show QR"><i class="fas fa-qrcode" style="font-size: 14px;"></i></button>
                                     <button class="icon-edit" onclick="window.openOfficerEditEvent('${ev.event_id}', '${safeName}', '${localDate}', '${safeLoc}', '${startTimeInput}', '${endTimeInput}', '${safeDesc}', ${ev.expected_attendance || 0})" style="background: #f1f5f9; border: none; color: #3b82f6; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="far fa-edit" style="font-size: 14px;"></i></button>
                                     <button class="icon-delete" onclick="window.deleteOfficerEvent('${ev.event_id}')" style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; padding: 7px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Delete Event"><i class="far fa-trash-alt" style="font-size: 14px;"></i></button>
                                 </div>
                             </div>
+                            <div style="margin-top: 8px;">
+                                <span class="badge ${badgeClass}" style="white-space: nowrap;">${badgeText}</span>
+                            </div>
                         </div>
-                        <p class="event-meta" style="margin-top: 15px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTimeDisplay} - ${endTimeDisplay}</p>
+                        <p class="event-meta" style="margin-top: 5px;">${ev.location || 'TBA'} • ${s.toLocaleDateString()} • ${startTimeDisplay} - ${endTimeDisplay}</p>
                         <div class="progress-container" style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <p style="font-size: 12px; color: #64748b; margin: 0;">Attendance Tracking</p>
@@ -1250,8 +1250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Handle path formatting (backend saves /qr/token.png, but frontend might need full URL)
-        const baseUrl = window.TatakApi.API_BASE_URL || 'http://localhost:3002';
-        const fullUrl = qrUrl.startsWith('http') ? qrUrl : baseUrl + qrUrl;
+        const fullUrl = window.TatakApi.formatImageUrl(qrUrl);
         
         img.src = fullUrl;
         title.textContent = eventName;
@@ -1292,10 +1291,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const desc = document.getElementById('officerEventDesc').value;
             const capacity = document.getElementById('officerEventCapacity')?.value;
 
-            // Combine date and time for backend
-            // Combine date and time and convert to ISO (UTC) to prevent timezone drift
-            const startDate = new Date(`${date}T${startTime}:00`).toISOString();
-            const endDate = endTime ? new Date(`${date}T${endTime}:00`).toISOString() : null;
+            const startDateObj = new Date(`${date}T${startTime}:00`);
+            const endDateObj = endTime ? new Date(`${date}T${endTime}:00`) : null;
+
+            if (endDateObj && endDateObj <= startDateObj) {
+                window.TatakApi.showToast('End time must be after start time.', 'error');
+                return;
+            }
+
+            const startDate = startDateObj.toISOString();
+            const endDate = endDateObj ? endDateObj.toISOString() : null;
 
             const payload = {
                 name: name,
