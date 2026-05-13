@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const logoutModal = document.getElementById('logoutModal');
     // Updated to match the new HTML IDs
-    const officerEventModal = document.getElementById('officerEventModal'); 
+    const officerEventModal = document.getElementById('officerEventModal');
     const officerEventForm = document.getElementById('officerEventForm');
     const officerEventModalTitle = document.getElementById('officerEventModalTitle');
     const officerEventIdInput = document.getElementById('officerEventId');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attendanceTableBody = document.getElementById('attendanceTableBody');
     const attendanceFooterText = document.getElementById('attendanceFooterText');
     const eventSelect = document.getElementById('eventSelect');
-    
+
     // Edit Attendance Modal Elements
     const editAttendanceModal = document.getElementById('editAttendanceModal');
     const editStudentName = document.getElementById('editStudentName');
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const position = profile.position || profile.role || 'Officer';
                 roleEl.textContent = orgName ? `${orgName} - ${position}` : position;
             }
-            
+
             if (profile.profile_picture) {
                 const fullPicUrl = formatImageUrl(profile.profile_picture);
                 if (widgetAvatar) {
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!_officerOrgId) return events;
         return events.filter(e =>
             String(e.organization_id) === String(_officerOrgId) ||
-            String(e.org_id)          === String(_officerOrgId)
+            String(e.org_id) === String(_officerOrgId)
         );
     }
 
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = events.map(event => {
                 const dateStr = new Date(event.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                 const certId = `REP-${event.event_id}-${new Date(event.start_date).getTime().toString().slice(-4)}`;
-                
+
                 return `
                     <div class="cert-row" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; border-bottom: 1px solid #f1f5f9; gap: 20px;">
                         <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
@@ -322,13 +322,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const details = button.dataset.details;
                     const certificateId = button.dataset.certId;
                     const recipient = document.querySelector('.officer-name')?.innerText || 'Officer';
-                    downloadCertificate({ 
-                        recipient, 
-                        eventName, 
-                        details, 
-                        certificateId, 
-                        issuer: 'University of Cebu', 
-                        date: new Date().toLocaleDateString() 
+                    downloadCertificate({
+                        recipient,
+                        eventName,
+                        details,
+                        certificateId,
+                        issuer: 'University of Cebu',
+                        date: new Date().toLocaleDateString()
                     });
                 });
             });
@@ -445,21 +445,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         attendanceTableBody.innerHTML = rows.map((item) => {
-            const fullName  = item.fname || 'Unknown Student';
-            const idNumber  = item.stud_id_number || item.student_id_number || 'N/A';
-            const course    = item.course || item.program || 'BSIT-3'; // Default to match UI
-            const status    = item.status || 'Present';
+            const fullName = item.fname || 'Unknown Student';
+            const idNumber = item.stud_id_number || item.student_id_number || 'N/A';
+            const course = item.course || item.program || 'BSIT-3'; // Default to match UI
+            const status = item.status || 'Present';
             const statusCls = getStatusClass(status);
-            const initials  = getInitials(fullName);
-            
+            const initials = getInitials(fullName);
+
             // Real logic: (Attended Events / Total Past Events) * 100
             const attended = parseInt(item.attended_count) || 0;
             const total = parseInt(item.total_passed_events) || 1; // Avoid division by zero
             const attendanceRate = Math.min(100, Math.round((attended / total) * 100));
-            
+
             const progressColor = attendanceRate > 80 ? '#10b981' : (attendanceRate > 50 ? '#f59e0b' : '#ef4444');
 
-            const avatarContent = item.profile_picture 
+            const avatarContent = item.profile_picture
                 ? `<img src="${formatImageUrl(item.profile_picture)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                 : initials;
 
@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const eventsRes = await window.TatakApi.apiRequest('/events').catch(() => ({ data: [] }));
             const allEvents = Array.isArray(eventsRes.data) ? eventsRes.data : [];
             const events = filterByOfficerOrg(allEvents);
-            
+
             // 2. Fetch students confirmed — filtered to officer's org
             let totalStudentsConfirmed = 0;
             if (_officerOrgId) {
@@ -600,13 +600,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('officer-overview-total-events').innerText = events.length;
             document.getElementById('officer-overview-total-students').innerText = totalStudentsConfirmed;
             // Assuming reports are tracked or static for now
-            document.getElementById('officer-overview-total-reports').innerText = '0'; 
+            document.getElementById('officer-overview-total-reports').innerText = '0';
 
             // Time logic
             const now = new Date();
-            
+
             // Separate events
-            const upcomingEvents = events.filter(e => new Date(e.start_date) > now).sort((a,b) => new Date(a.start_date) - new Date(b.start_date));
+            const upcomingEvents = events.filter(e => new Date(e.start_date) > now).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
             const activeEvents = events.filter(e => {
                 const s = new Date(e.start_date);
                 const end = e.end_date ? new Date(e.end_date) : new Date(s.getTime() + 4 * 60 * 60 * 1000);
@@ -623,11 +623,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetLiveEvent = activeEvents[0] || upcomingEvents[0];
             // SILENT RELOAD: Don't show loading spinner if we already have content
             const hasExistingContent = heroCard && heroCard.innerHTML.trim() !== '';
-            
+
             if (targetLiveEvent && heroCard) {
                 heroCard.style.display = 'block';
                 const isLive = activeEvents.length > 0;
-                
+
                 heroCard.innerHTML = `
                     <div class="live-status-header">
                         <div class="live-indicator">
@@ -660,12 +660,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const presentCount = attList.filter(a => a.status === 'Present' || a.status === 'Late').length;
                     const expected = targetLiveEvent.expected_attendance || 0;
                     const percent = expected > 0 ? Math.round((presentCount / expected) * 100) : 0;
-                    
+
                     const countEl = heroCard.querySelector('.current-count');
                     const totalEl = heroCard.querySelector('.total-count');
                     const fillEl = heroCard.querySelector('.hero-progress-fill');
                     const metaEl = heroCard.querySelector('.hero-progress-meta');
-                    
+
                     if (countEl) countEl.innerText = presentCount;
                     if (totalEl) totalEl.innerText = expected > 0 ? `/${expected}` : '/--';
                     if (fillEl) fillEl.style.width = `${percent}%`;
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const myEventsContainer = document.getElementById('officer-overview-my-events');
             if (myEventsContainer) {
                 const combinedEvents = [...activeEvents, ...upcomingEvents, ...pastEvents].slice(0, 3);
-                
+
                 if (combinedEvents.length === 0) {
                     myEventsContainer.innerHTML = '<p style="padding: 20px; color: #a0a0a0;">No events assigned to you yet.</p>';
                 } else {
@@ -709,11 +709,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         let badgeHtml = '';
                         const s = new Date(ev.start_date);
                         const end = ev.end_date ? new Date(ev.end_date) : new Date(s.getTime() + 4 * 60 * 60 * 1000);
-                        
+
                         if (now >= s && now <= end) badgeHtml = '<span class="badge badge-open">Open</span>';
                         else if (now < s) badgeHtml = '<span class="badge badge-upcoming">Upcoming</span>';
                         else badgeHtml = '<span class="badge badge-closed">Closed</span>';
-                        
+
                         return `
                             <div class="event-item-row" style="margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
                                 <div class="event-info">
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 5. Populate Recent Check-ins
             const recentCheckinsContainer = document.getElementById('officer-overview-recent-checkins');
             const recentCheckinsHeader = document.querySelector('.list-container:nth-child(2) .list-header');
-            
+
             if (recentCheckinsContainer && recentCheckinsHeader) {
                 // Add event filter if not already there
                 let filterSelect = document.getElementById('overview-checkin-filter');
@@ -744,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     recentCheckinsHeader.insertAdjacentHTML('beforeend', selectHtml);
                     filterSelect = document.getElementById('overview-checkin-filter');
-                    
+
                     filterSelect.addEventListener('change', async (e) => {
                         const eventId = e.target.value;
                         const eventName = e.target.options[e.target.selectedIndex].text;
@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const eventAttendanceRes = await window.TatakApi.apiRequest(`/attendance/personnel/${eventId}`).catch(() => ({ data: [] }));
                         const eventAttendance = Array.isArray(eventAttendanceRes.data) ? eventAttendanceRes.data : [];
-                        
+
                         if (eventAttendance.length === 0) {
                             recentCheckinsContainer.innerHTML = `<p style="padding: 20px; color: #a0a0a0; font-size: 12px;">No check-ins yet for <strong>${eventName}</strong>.</p>`;
                         } else {
@@ -766,10 +766,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             recentCheckinsContainer.innerHTML = recent5.map(rec => {
                                 const initials = getInitials(rec.fname || 'U');
                                 const status = rec.status || 'Present';
-                                
+
                                 let statusBg = '#dcfce7'; // Present (Green)
                                 let statusColor = '#16a34a';
-                                
+
                                 if (status === 'Absent') {
                                     statusBg = '#fee2e2'; // Red
                                     statusColor = '#ef4444';
@@ -876,13 +876,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial authentication check then profile load.
     ensureOfficerAuthenticated();
-    
+
     // Hide all sections immediately to prevent flash before state restoration
     resetNavigation();
-    
+
     // Load officer profile early so _officerOrgId is ready before any event fetches.
     loadOfficerProfile();
-    
+
     // Wire up "View all" link in My Events to switch to Events tab
     const viewAllEventsBtn = document.getElementById('officer-overview-my-events-link');
     if (viewAllEventsBtn) {
@@ -902,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => closeModal(editAttendanceModal));
-    
+
     if (confirmEditBtn) {
         confirmEditBtn.addEventListener('click', async () => {
             const attendanceId = editAttendanceIdInput.value;
@@ -917,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await window.TatakApi.apiRequest(`/attendance/${attendanceId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         status: status,
                         remarks: remarks
                     })
@@ -929,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (eventSelect && eventSelect.value) {
                         loadEventAttendance(eventSelect.value);
                     }
-                    
+
                     // Show success notification after a tiny delay
                     setTimeout(() => {
                         const successModal = document.getElementById('successModal');
@@ -983,7 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const successModal = document.getElementById('successModal');
         const successTitle = document.getElementById('successModalTitle');
         const successMsg = document.getElementById('successModalMessage');
-        
+
         if (successModal) {
             if (successTitle) successTitle.textContent = title;
             if (successMsg) successMsg.textContent = message;
@@ -1019,14 +1019,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!modal) return;
 
         document.getElementById('detailsEventName').textContent = eventData.name || 'Unnamed Event';
-        
+
         const dateObj = new Date(eventData.start_date);
         document.getElementById('detailsEventDate').textContent = dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        
+
         const startTime = eventData.start_time || (eventData.start_date ? new Date(eventData.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00');
         const endTime = eventData.end_time || (eventData.end_date ? new Date(eventData.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00');
         document.getElementById('detailsEventTime').textContent = `${startTime} - ${endTime}`;
-        
+
         document.getElementById('detailsEventLocation').textContent = eventData.location || 'No location specified';
         document.getElementById('detailsEventDescription').textContent = eventData.description || 'No description available for this event.';
 
@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newBtn.addEventListener('click', async () => {
             newBtn.disabled = true;
             newBtn.innerText = 'Closing...';
-            
+
             try {
                 // To "close" an event, we update its end_date to now
                 const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1066,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 closeModal(modal);
-                
+
                 if (res.success) {
                     showSuccessModal('Attendance Closed', 'The event attendance has been successfully ended.');
                     loadOfficerOverview();
@@ -1105,12 +1105,12 @@ document.addEventListener('DOMContentLoaded', () => {
             officerEventsGrid.innerHTML = events.map(ev => {
                 const s = new Date(ev.start_date);
                 const end = ev.end_date ? new Date(ev.end_date) : new Date(s.getTime() + 4 * 60 * 60 * 1000);
-                
+
                 let badgeClass = 'badge-closed';
                 let badgeText = 'Closed';
-                if (ev.approval_status && ev.approval_status.toLowerCase() === 'pending') { 
-                    badgeClass = 'badge-pending'; 
-                    badgeText = 'Pending'; 
+                if (ev.approval_status && ev.approval_status.toLowerCase() === 'pending') {
+                    badgeClass = 'badge-pending';
+                    badgeText = 'Pending';
                 }
                 else if (now >= s && now <= end) { badgeClass = 'badge-open'; badgeText = 'Open'; }
                 else if (now < s) { badgeClass = 'badge-upcoming'; badgeText = 'Upcoming'; }
@@ -1119,14 +1119,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const localDate = s.getFullYear() + '-' + String(s.getMonth() + 1).padStart(2, '0') + '-' + String(s.getDate()).padStart(2, '0');
                 const startTimeInput = s.getHours().toString().padStart(2, '0') + ':' + s.getMinutes().toString().padStart(2, '0');
                 const endTimeInput = ev.end_date ? (new Date(ev.end_date).getHours().toString().padStart(2, '0') + ':' + new Date(ev.end_date).getMinutes().toString().padStart(2, '0')) : '';
-                
+
                 // 12-hour display format
                 const startTimeDisplay = window.TatakApi.formatTime12h(s);
                 const endTimeDisplay = ev.end_date ? window.TatakApi.formatTime12h(end) : 'TBA';
 
-                const safeName = (ev.name||'').replace(/'/g, "\\'");
-                const safeLoc = (ev.location||'').replace(/'/g, "\\'");
-                const safeDesc = (ev.description||'').replace(/'/g, "\\'");
+                const safeName = (ev.name || '').replace(/'/g, "\\'");
+                const safeLoc = (ev.location || '').replace(/'/g, "\\'");
+                const safeDesc = (ev.description || '').replace(/'/g, "\\'");
 
                 return `
                     <div class="event-card">
@@ -1177,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteOfficerEvent = (eventId) => {
         const modal = document.getElementById('deleteConfirmModal');
         const confirmBtn = document.getElementById('confirmDeleteBtn');
-        
+
         if (!modal || !confirmBtn) {
             // Fallback to native if modal missing
             if (confirm('Are you sure you want to delete this event?')) {
@@ -1187,19 +1187,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         openModal(modal);
-        
+
         // Remove old listeners to avoid multiple deletions
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        
+
         newConfirmBtn.addEventListener('click', async (e) => {
             e.stopPropagation(); // Prevent bubbling to window backdrop handlers
             newConfirmBtn.disabled = true;
             newConfirmBtn.innerText = 'Deleting...';
-            
+
             // Close confirm modal first to avoid overlapping transitions
             closeModal(modal);
-            
+
             await performDeletion(eventId);
         });
     };
@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Fallback for immediate display if no reload happens
                 showSuccessModal('Event Deleted', 'The event and all associated records have been successfully removed.');
-                
+
                 // Refresh data
                 setTimeout(() => {
                     loadManageEvents(true);
@@ -1237,13 +1237,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarLogout) sidebarLogout.addEventListener('click', () => openModal(logoutModal));
     if (topbarLogout) topbarLogout.addEventListener('click', () => openModal(logoutModal));
     if (stayBtn) stayBtn.addEventListener('click', () => closeModal(logoutModal));
-    
+
     // QR Modal Logic
     window.showEventQR = (qrUrl, eventName) => {
         const modal = document.getElementById('qrDisplayModal');
         const img = document.getElementById('qrDisplayImg');
         const title = document.getElementById('qrModalEventName');
-        
+
         if (!qrUrl) {
             window.TatakApi.showToast('QR code not generated for this event yet.', 'info');
             return;
@@ -1251,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Handle path formatting (backend saves /qr/token.png, but frontend might need full URL)
         const fullUrl = window.TatakApi.formatImageUrl(qrUrl);
-        
+
         img.src = fullUrl;
         title.textContent = eventName;
         openModal(modal);
@@ -1281,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (officerEventForm) {
         officerEventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const eventId = officerEventIdInput.value;
             const name = document.getElementById('officerEventName').value;
             const date = document.getElementById('officerEventDate').value;
@@ -1332,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify(payload)
                     });
                 }
-                
+
                 if (response.success) {
                     closeModal(officerEventModal);
                     officerEventForm.reset();
@@ -1351,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Show Success Modal after a tiny delay for clean transition
                     setTimeout(() => {
                         showSuccessModal(title, msg);
-                        
+
                         // Refresh data silently
                         setTimeout(() => {
                             loadManageEvents(true);
@@ -1388,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const filtered = _allAttendanceRows.filter(item => {
                 const name = (item.fname || item.full_name || '').toLowerCase();
-                const id   = (item.stud_id_number || item.student_id_number || item.id_number || '').toLowerCase();
+                const id = (item.stud_id_number || item.student_id_number || item.id_number || '').toLowerCase();
                 return name.includes(query) || id.includes(query);
             });
             renderAttendanceTable(filtered);
@@ -1400,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         // Close logout modal when clicking on backdrop
         if (e.target === logoutModal) closeModal(logoutModal);
-        
+
         // Close officer event modal when clicking on backdrop
         if (e.target === officerEventModal) closeModal(officerEventModal);
     });
@@ -1430,7 +1430,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOfficerProfile().then(async () => {
         const lastSection = localStorage.getItem('officer_last_section') || 'nav-overview';
         showSection(lastSection);
-        
+
         if (typeof loadOfficerNotifications === 'function') {
             await loadOfficerNotifications();
         }
