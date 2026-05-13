@@ -65,15 +65,35 @@ document.addEventListener('DOMContentLoaded', () => {
         requestResetCode(true);
     });
 
-    verifyCodeBtn.addEventListener('click', () => {
+    verifyCodeBtn.addEventListener('click', async () => {
         const code = codeInputs.map(i => i.value.trim()).join('');
         if (code.length < 6) {
             codeInputs[0].focus();
+            window.TatakApi.showToast('Please enter the full 6-digit code.', 'error');
             return;
         }
-        resetToken = code;
-        showStep(2);
-        document.getElementById('newPassword').focus();
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/verify-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: code })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                window.TatakApi.showToast(errorData.error || 'Invalid or expired code.', 'error');
+                return;
+            }
+
+            resetToken = code;
+            showStep(2);
+            document.getElementById('newPassword').focus();
+            window.TatakApi.showToast('Code verified! Please set your new password.', 'success');
+        } catch (error) {
+            console.error('Verify token error:', error);
+            window.TatakApi.showToast('Unable to verify code. Please try again.', 'error');
+        }
     });
 
     resetPasswordBtn.addEventListener('click', async () => {

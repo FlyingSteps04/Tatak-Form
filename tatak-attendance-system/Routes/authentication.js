@@ -197,6 +197,21 @@ router.post('/forgot-password', async (req, res) => {
   }
 })
 
+router.post('/verify-token', async (req, res) => {
+  const { token } = req.body
+  if (!token) return res.status(400).json({ error: "Token is required" })
+
+  const resetRecord = await getResetToken(token)
+  if (!resetRecord) return res.status(400).json({ error: "Invalid code" })
+
+  if (new Date(resetRecord.expires_at) < new Date()) {
+    await deleteResetToken(token)
+    return res.status(400).json({ error: "Token expired" })
+  }
+
+  res.json({ valid: true })
+})
+
 router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body
 
