@@ -644,6 +644,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetLiveEvent && heroCard) {
                 heroCard.style.display = 'block';
                 const isLive = activeEvents.length > 0;
+                
+                // Get other upcoming events (excluding the one in the hero title if it's the target)
+                const otherUpcoming = upcomingEvents.filter(e => e.event_id !== targetLiveEvent.event_id).slice(0, 2);
+                let upcomingHtml = '';
+                if (otherUpcoming.length > 0) {
+                    upcomingHtml = `
+                        <div class="hero-upcoming-section" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <p style="margin: 0 0 15px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Upcoming Next</p>
+                            ${otherUpcoming.map(u => `
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                    <div style="background: rgba(255,255,255,0.1); padding: 6px; border-radius: 8px; min-width: 42px; text-align: center;">
+                                        <strong style="display: block; font-size: 14px;">${new Date(u.start_date).getDate()}</strong>
+                                        <span style="font-size: 9px; opacity: 0.8;">${new Date(u.start_date).toLocaleString('default', {month:'short'})}</span>
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h4 style="margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name}</h4>
+                                        <p style="margin: 2px 0 0; font-size: 11px; opacity: 0.6;">${u.location || 'TBA'}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
 
                 heroCard.innerHTML = `
                     <div class="live-status-header">
@@ -667,6 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-time-limit"><i class="far fa-clock"></i> Details</button>
                         ${isLive ? '<button class="btn-close-live"><i class="fas fa-times"></i> Close</button>' : ''}
                     </div>
+                    ${upcomingHtml}
                 `;
 
                 // Fetch actual counts for the hero card to make it dynamic

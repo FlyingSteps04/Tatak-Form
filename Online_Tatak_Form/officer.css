@@ -1347,6 +1347,10 @@ $mobileStyles
    OFFICER DASHBOARD MOBILE REDESIGN
    ====================================================== */
 
+.menu-toggle {
+    display: none !important;
+}
+
 @media (max-width: 1024px) {
     .dashboard-container {
         flex-direction: column;

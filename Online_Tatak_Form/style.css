@@ -3076,9 +3076,37 @@ body {
     display: flex;
     align-items: center;
     color: white;
+    gap: 12px;
+    flex-wrap: nowrap;
 }
 
-.logo img { height: 45px; margin-right: 12px; }
+.logo img { 
+    height: 42px; 
+    width: auto; 
+    object-fit: contain; 
+    flex-shrink: 0;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.logo-text strong {
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+.logo-text span {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.menu-toggle {
+    display: none !important;
+}
 
 nav a {
     color: #cbd5e1;
@@ -5203,8 +5231,30 @@ h2.title-built span {
         max-width: 100% !important;
     }
 
+    .logo {
+        gap: 8px !important;
+        max-width: 70% !important;
+    }
+
+    .logo img {
+        height: 32px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .logo-text {
+        min-width: 0 !important;
+    }
+
     .logo-text strong {
-        font-size: 0.95rem !important;
+        font-size: 0.85rem !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .logo-text span {
+        font-size: 0.65rem !important;
+        white-space: nowrap !important;
     }
 
     .btn-get-started {
