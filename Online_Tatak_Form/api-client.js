@@ -118,9 +118,10 @@ function formatImageUrl(path) {
         return path;
     }
 
-    // If it starts with /uploads, /qr, uploads/, or qr/, it's a backend asset
+    // If it starts with /uploads, /qr, /events/qr, or their non-slash variants, it's a backend asset
     if (path.startsWith('/uploads') || path.startsWith('uploads/') || 
-        path.startsWith('/qr') || path.startsWith('qr/')) {
+        path.startsWith('/qr') || path.startsWith('qr/') ||
+        path.startsWith('/events/qr')) {
         const cleanPath = path.startsWith('/') ? path : `/${path}`;
         return `${API_BASE_URL}${cleanPath}`;
     }
