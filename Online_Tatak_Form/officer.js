@@ -1291,8 +1291,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const desc = document.getElementById('officerEventDesc').value;
             const capacity = document.getElementById('officerEventCapacity')?.value;
 
-            const startDateObj = new Date(`${date}T${startTime}:00`);
-            const endDateObj = endTime ? new Date(`${date}T${endTime}:00`) : null;
+            // Robust date construction for better mobile support
+            const [y, m, d] = date.split('-').map(Number);
+            const [sh, sm] = startTime.split(':').map(Number);
+            const startDateObj = new Date(y, m - 1, d, sh, sm);
+
+            let endDateObj = null;
+            if (endTime) {
+                const [eh, em] = endTime.split(':').map(Number);
+                endDateObj = new Date(y, m - 1, d, eh, em);
+            }
 
             if (endDateObj && endDateObj <= startDateObj) {
                 window.TatakApi.showToast('End time must be after start time.', 'error');
@@ -1445,4 +1453,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.TatakApi && window.TatakApi.checkPendingToast) {
         window.TatakApi.checkPendingToast();
     }
+
+    // Auto-refresh data when page becomes visible (handles PC->Phone sync)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const currentSection = localStorage.getItem('officer_last_section') || 'nav-overview';
+            if (currentSection === 'nav-overview') loadOfficerOverview();
+            else if (currentSection === 'nav-events') loadManageEvents(true);
+            else if (currentSection === 'nav-attendance') loadEventsIntoSelector();
+        }
+    });
 });

@@ -1940,9 +1940,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = addEventForm.querySelector('button[type="submit"]');
             submitBtn.innerText = 'Saving...';
             submitBtn.disabled = true;
-            const startDate = new Date(document.getElementById('addEventDate').value + 'T' + document.getElementById('addEventStartTime').value + ':00');
-            const endTimeStr = document.getElementById('addEventEndTime').value;
-            const endDate = endTimeStr ? new Date(document.getElementById('addEventDate').value + 'T' + endTimeStr + ':00') : null;
+            // Robust date construction
+            const dateVal = document.getElementById('addEventDate').value;
+            const startStr = document.getElementById('addEventStartTime').value;
+            const endStr = document.getElementById('addEventEndTime').value;
+            
+            const [y, m, d] = dateVal.split('-').map(Number);
+            const [sh, sm] = startStr.split(':').map(Number);
+            const startDate = new Date(y, m - 1, d, sh, sm);
+            
+            let endDate = null;
+            if (endStr) {
+                const [eh, em] = endStr.split(':').map(Number);
+                endDate = new Date(y, m - 1, d, eh, em);
+            }
 
             if (endDate && endDate <= startDate) {
                 window.TatakApi.showToast('End time must be after start time.', 'error');
@@ -1988,9 +1999,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = editEventForm.querySelector('button[type="submit"]');
             submitBtn.innerText = 'Updating...';
             submitBtn.disabled = true;
-            const startDate = new Date(document.getElementById('editEventDate').value + 'T' + document.getElementById('editEventStartTime').value + ':00');
-            const endTimeStr = document.getElementById('editEventEndTime').value;
-            const endDate = endTimeStr ? new Date(document.getElementById('editEventDate').value + 'T' + endTimeStr + ':00') : null;
+            // Robust date construction
+            const dateVal = document.getElementById('editEventDate').value;
+            const startStr = document.getElementById('editEventStartTime').value;
+            const endStr = document.getElementById('editEventEndTime').value;
+
+            const [y, m, d] = dateVal.split('-').map(Number);
+            const [sh, sm] = startStr.split(':').map(Number);
+            const startDate = new Date(y, m - 1, d, sh, sm);
+
+            let endDate = null;
+            if (endStr) {
+                const [eh, em] = endStr.split(':').map(Number);
+                endDate = new Date(y, m - 1, d, eh, em);
+            }
 
             if (endDate && endDate <= startDate) {
                 window.TatakApi.showToast('End time must be after start time.', 'error');
@@ -2348,4 +2370,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.TatakApi && window.TatakApi.checkPendingToast) {
         window.TatakApi.checkPendingToast();
     }
+
+    // Auto-refresh when tab becomes visible (handles cross-device sync)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const section = localStorage.getItem('admin_last_section') || 'overview';
+            if (section === 'overview') loadAdminOverviewMetrics();
+            else if (section === 'events') loadAdminEventsTable();
+            else if (section === 'organization') loadAdminOrganizations();
+            else if (section === 'officers') loadAdminOfficersTable();
+            else if (section === 'students') loadAdminStudentsTable();
+            else if (section === 'audit') loadAuditLogs();
+        }
+    });
 });
