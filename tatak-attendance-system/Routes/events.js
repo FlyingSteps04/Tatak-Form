@@ -15,7 +15,7 @@ import { pool } from '../Database/connection.js';
 
 const router = express.Router();
 
-// Helper to ensure QR directory exists
+// Helper to ensure QR directory exists (Keep for backward compatibility of uploads if needed, but not for QR)
 const ensureQrDir = () => {
     const qrDir = path.join(process.cwd(), 'qr');
     if (!fs.existsSync(qrDir)) {
@@ -23,6 +23,34 @@ const ensureQrDir = () => {
     }
     return qrDir;
 };
+
+// NEW: Dynamic QR Generation Route
+router.get('/qr/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        if (!token) return res.status(400).json({ error: "Token is required" });
+
+        const qrPayload = JSON.stringify({ event_token: token, type: "attendance" });
+        
+        // Generate QR Code as a Buffer
+        const qrImageBuffer = await QRCode.toBuffer(qrPayload, {
+            errorCorrectionLevel: 'H',
+            width: 300,
+            margin: 2,
+            color: {
+                dark: '#1e293b',  // Slate 800
+                light: '#ffffff'
+            }
+        });
+
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for a year since token is unique
+        res.send(qrImageBuffer);
+    } catch (error) {
+        console.error("QR Dynamic Generation Error:", error);
+        res.status(500).json({ error: "Failed to generate QR code" });
+    }
+});
 
 // GET ALL EVENTS
 router.get('/', authenticateToken, async (req, res) => {
@@ -57,32 +85,9 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
             longitude = 0;
         }
 
-        // 2. QR GENERATION - THE FIX
+        // 2. QR GENERATION - DYNAMIC APPROACH
         const eventToken = crypto.randomUUID();
-        const qrPayload = JSON.stringify({ event_token: eventToken, type: "attendance" });
-
-        // Ensure directory exists using absolute path from project root
-        const qrDir = path.resolve(process.cwd(), 'qr');
-        if (!fs.existsSync(qrDir)) {
-            fs.mkdirSync(qrDir, { recursive: true });
-        }
-
-        const qrFileName = `${eventToken}.png`;
-        const qrFilePath = path.join(qrDir, qrFileName);
-        const qrPublicPath = `/qr/${qrFileName}`;
-
-        // Using toFile directly with error handling
-        try {
-            await QRCode.toFile(qrFilePath, qrPayload, {
-                errorCorrectionLevel: 'H',
-                width: 300,
-                margin: 2
-            });
-            console.log("✅ QR Successfully generated at:", qrFilePath);
-        } catch (qrErr) {
-            console.error("❌ QR File System Error:", qrErr);
-            return res.status(500).json({ error: "Failed to write QR file to disk" });
-        }
+        const qrPublicPath = `/events/qr/${eventToken}`;
 
         // Determine initial approval status
         const initialStatus = req.user.role === 'Admin' ? 'Approved' : 'Pending';
@@ -223,18 +228,18 @@ router.delete('/:id', authenticateToken, authenticateRole("Admin", "Officer"), a
         const result = await deleteEvent(id);
         if (!result.affectedRows) return res.status(400).json({ error: "Delete failed" });
 
-        // Delete physical QR file from storage
-        if (event.qr_code) {
+        // Delete physical QR file if it exists (legacy)
+        if (event.qr_code && event.qr_code.startsWith('/qr/')) {
             const relativePath = event.qr_code.startsWith('/') ? event.qr_code.substring(1) : event.qr_code;
             const fullPath = path.resolve(process.cwd(), relativePath);
             
             try {
                 if (fs.existsSync(fullPath)) {
                     fs.unlinkSync(fullPath);
-                    console.log("✅ Deleted QR file:", fullPath);
+                    console.log("✅ Deleted legacy QR file:", fullPath);
                 }
             } catch (fsErr) {
-                console.error("❌ Failed to delete QR file:", fsErr);
+                console.error("❌ Failed to delete legacy QR file:", fsErr);
             }
         }
 

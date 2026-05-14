@@ -109,10 +109,17 @@ router.post('/scan', authenticateToken, async (req, res) => {
         const end = event.end_date ? new Date(event.end_date) : null;
 
         if (now < start) {
-            return res.status(400).json({ error: "Event has not started yet" });
+            const timeDiff = Math.ceil((start - now) / (1000 * 60));
+            return res.status(400).json({ 
+                error: `Event has not started yet. Please try again in ${timeDiff} minutes.`,
+                starts_at: event.start_date 
+            });
         }
         if (end && now > end) {
-            return res.status(400).json({ error: "Event has already ended" });
+            return res.status(400).json({ 
+                error: "This event's attendance period has already ended.",
+                ended_at: event.end_date 
+            });
         }
 
         // 5. Geofencing Logic
