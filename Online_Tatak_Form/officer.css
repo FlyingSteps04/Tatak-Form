@@ -1341,3 +1341,136 @@ body {
 .text-center { text-align: center !important; }
 
 $mobileStyles
+
+
+/* ======================================================
+   OFFICER DASHBOARD MOBILE REDESIGN
+   ====================================================== */
+
+@media (max-width: 1024px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 2000;
+        box-shadow: 20px 0 50px rgba(0,0,0,0.2);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 20px !important;
+        width: 100% !important;
+    }
+
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 20px;
+        padding: 15px 0 !important;
+    }
+
+    .menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: white !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    .top-icons {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Stats Grid Stacking */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .dashboard-lists {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Live Hero Card Mobile */
+    .live-hero-card {
+        padding: 20px !important;
+    }
+
+    .hero-title {
+        font-size: 22px !important;
+    }
+
+    .current-count {
+        font-size: 36px !important;
+    }
+
+    /* Table Stacking Logic */
+    .att-dir-table thead {
+        display: none !important;
+    }
+
+    .att-dir-table, .att-dir-table tbody, .att-dir-table tr, .att-dir-table td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .att-dir-table tr {
+        margin-bottom: 20px !important;
+        background: white !important;
+        border-radius: 16px !important;
+        padding: 15px !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .att-dir-table td {
+        text-align: right !important;
+        padding: 10px 0 !important;
+        border: none !important;
+        position: relative !important;
+        padding-left: 45% !important;
+    }
+
+    .att-dir-table td::before {
+        content: attr(data-label);
+        position: absolute !important;
+        left: 0 !important;
+        width: 40% !important;
+        text-align: left !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+    }
+
+    .att-section-header {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .att-search-wrapper, .att-event-selector-wrap {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Modals */
+    .modal-content, .confirm-modal-content {
+        width: 95% !important;
+        padding: 20px !important;
+    }
+}

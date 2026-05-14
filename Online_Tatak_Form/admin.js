@@ -1070,10 +1070,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 return `
                     <tr>
-                        <td class="text-center" style="font-size: 13px; color: #64748b;">${date}</td>
-                        <td class="text-center"><span style="font-weight: 600; color: #1e293b;">${user}</span><span style="font-size: 11px; color: #94a3b8;">${roleLabel}</span></td>
-                        <td class="text-center"><span class="badge-mini" style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-weight: 600;">${log.action}</span></td>
-                        <td class="text-center" style="font-size: 13px; color: #475569;">${details}</td>
+                        <td class="text-center" data-label="TIMESTAMP" style="font-size: 13px; color: #64748b;">${date}</td>
+                        <td class="text-center" data-label="USER"><span style="font-weight: 600; color: #1e293b;">${user}</span><span style="font-size: 11px; color: #94a3b8;">${roleLabel}</span></td>
+                        <td class="text-center" data-label="ACTION"><span class="badge-mini" style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-weight: 600;">${log.action}</span></td>
+                        <td class="text-center" data-label="DETAILS" style="font-size: 13px; color: #475569;">${details}</td>
                     </tr>
                 `;
             }).join('');
@@ -1604,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     return `
                         <tr>
-                            <td>
+                            <td data-label="OFFICER">
                                 <div style="display: flex; align-items: center; gap: 15px;">
                                     <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); overflow: hidden;">${avatarContent}</div>
                                     <div style="display: flex; flex-direction: column;">
@@ -1612,11 +1612,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center"><span class="${posClass}">${position}</span></td>
-                            <td class="text-center"><span class="badge-org-blue">${orgName}</span></td>
-                            <td class="text-center" style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
-                            <td class="text-center"><span class="status-indicator-dot" style="color: ${statusColor};">${statusLabel}</span></td>
-                            <td class="text-center">
+                            <td class="text-center" data-label="POSITION"><span class="${posClass}">${position}</span></td>
+                            <td class="text-center" data-label="ORGANIZATION"><span class="badge-org-blue">${orgName}</span></td>
+                            <td class="text-center" data-label="TERM" style="color: #64748b; font-weight: 600; font-size: 0.85rem;">2025 - 2026</td>
+                            <td class="text-center" data-label="STATUS"><span class="status-indicator-dot" style="color: ${statusColor};">${statusLabel}</span></td>
+                            <td class="text-center" data-label="ACTION">
                                 <div class="action-icons" style="display: flex; gap: 6px; justify-content: center;">
                                     <button class="icon-edit" style="background: #eff6ff; color: #2563eb; width: 32px; height: 32px; border-radius: 8px;" onclick="window.openEditOfficerModal('${off.officer_id}', '${fullName.replace(/'/g, "\\'")}', '${off.organization_id}', '${position.replace(/'/g, "\\'")}', '${off.status || 'Active'}', '${off.profile_picture || ''}')" title="Edit Officer"><i class="far fa-edit" style="font-size: 0.85rem;"></i></button>
                                     <button class="icon-delete" style="background: #fff1f2; color: #ef4444; width: 32px; height: 32px; border-radius: 8px;" onclick="window.openDeleteOfficerModal('${off.officer_id}', '${off.user_id}')" title="Delete Officer"><i class="far fa-trash-alt" style="font-size: 0.85rem;"></i></button>
