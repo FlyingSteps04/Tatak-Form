@@ -1596,23 +1596,30 @@ body {
     }
 
     .notification-bell {
-        background: none !important;
-        border: none !important;
-        color: #1e293b !important;
-        font-size: 1.25rem !important;
+        width: 38px !important;
+        height: 38px !important;
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #64748b !important;
+        font-size: 1.1rem !important;
         padding: 0 !important;
-        box-shadow: none !important;
-        width: auto !important;
-        height: auto !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+        position: relative !important;
     }
 
-    .logout-circle {
-        display: none !important; /* Keep it clean, logout is in sidebar */
+    .notification-badge {
+        position: absolute !important;
+        top: -2px !important;
+        right: -2px !important;
+        z-index: 10 !important;
     }
 
-    .widget-avatar {
-        width: 32px !important;
-        height: 32px !important;
+    .profile-avatar, .logout-circle {
+        display: none !important; /* Keep it clean, profile is in sidebar */
     }
 
     .welcome-text h1 {
