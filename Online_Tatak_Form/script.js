@@ -17,12 +17,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (hamburger && mobileMenu && closeMenu) {
         window.toggleMenu = () => {
-            mobileMenu.classList.toggle('active');
-            document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : 'auto';
+            const isActive = mobileMenu.classList.toggle('active');
+            hamburger.classList.toggle('active'); // Optional: for hamburger animation
+            document.body.style.overflow = isActive ? 'hidden' : 'auto';
         };
 
-        hamburger.addEventListener('click', toggleMenu);
+        hamburger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu();
+        });
+
         closeMenu.addEventListener('click', toggleMenu);
+
+        // Close menu on click outside
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') && !mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                toggleMenu();
+            }
+        });
+
+        // Close menu on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+    }
+
+    // Navbar Scroll Effect
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
     }
     const roleButtons = document.querySelectorAll('.role-tab');
     const usernameLabel = document.getElementById('usernameLabel');
