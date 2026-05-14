@@ -5182,15 +5182,7 @@ h2.title-built span {
         display: none !important; 
     }
     .hamburger {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        margin-left: 20px;
+        display: none !important; 
     }
 }
 
@@ -5229,11 +5221,14 @@ h2.title-built span {
         padding: 0 6% !important;
         width: 100% !important;
         max-width: 100% !important;
+        justify-content: center !important;
     }
 
     .logo {
         gap: 8px !important;
-        max-width: 70% !important;
+        max-width: 90% !important;
+        justify-content: center !important;
+        flex: 1 !important;
     }
 
     .logo img {
