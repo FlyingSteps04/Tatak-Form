@@ -492,13 +492,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-center" data-label="COURSE & YEAR"><span class="att-course-tag">${course}</span></td>
                 <td class="text-center" data-label="STATUS"><span class="att-status-pill att-status-${statusCls}">${getStatusLabel(status)}</span></td>
                 <td class="text-center" data-label="ATTENDANCE">
-                    <div style="width: 100px; margin: 0 auto;">
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                            <span style="color: #64748b;">Rate</span>
-                            <span style="font-weight: 700; color: #1e293b;">${attendanceRate}%</span>
+                    <div style="width: 100%; max-width: 120px; margin: 0 auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; margin-bottom: 5px;">
+                            <span style="color: #64748b; font-weight: 600;">Rate</span>
+                            <span style="color: #1e293b; font-weight: 800;">${attendanceRate}%</span>
                         </div>
-                        <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
-                            <div style="width: ${attendanceRate}%; height: 100%; background: ${progressColor}; border-radius: 10px;"></div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="width: ${attendanceRate}%; height: 100%; background: ${progressColor}; border-radius: 10px; transition: width 0.5s ease;"></div>
                         </div>
                     </div>
                 </td>
@@ -1471,6 +1471,10 @@ document.addEventListener('DOMContentLoaded', () => {
             navBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 showSection(id);
+                // Auto-close sidebar on mobile after clicking a link
+                if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                }
             });
         }
     });

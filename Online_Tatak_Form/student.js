@@ -485,7 +485,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const badgeClass = isUpcoming ? 'upcoming' : (isPast ? 'closed' : 'open');
                     const badgeText = isUpcoming ? 'Coming Up' : (isPast ? 'Closed' : 'Open Now');
                     
-                    nextEventContainer.innerHTML = `
+                    // Create main card
+                    let html = `
                         <div class="card-header">
                             <h3>${nextEvent.name}</h3>
                             <span class="badge ${badgeClass}">${badgeText}</span>
@@ -497,6 +498,31 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${!isUpcoming ? '<button class="btn-confirm" onclick="window.startQRScan()"><i class="fas fa-qrcode"></i> Scan QR</button>' : ''}
                         </div>
                     `;
+
+                    // If the current nextEvent is NOT upcoming, try to find a separate upcoming one to show below
+                    if (!isUpcoming) {
+                        const separateUpcoming = approvedEvents.filter(e => new Date(e.start_date) > now).sort((a,b) => new Date(a.start_date) - new Date(b.start_date))[0];
+                        if (separateUpcoming) {
+                            html += `
+                                <div class="upcoming-divider" style="margin: 25px 0 20px; border-top: 1px dashed #e2e8f0; position: relative; text-align: center;">
+                                    <span style="background: white; padding: 0 10px; font-size: 11px; font-weight: 800; color: #94a3b8; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); text-transform: uppercase;">Upcoming Next</span>
+                                </div>
+                                <div class="upcoming-mini-card" style="padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 15px;">
+                                    <div style="background: white; padding: 8px; border-radius: 10px; text-align: center; min-width: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                        <strong style="display: block; font-size: 14px; color: #1e3a8a;">${new Date(separateUpcoming.start_date).getDate()}</strong>
+                                        <span style="font-size: 10px; color: #64748b; text-transform: uppercase;">${new Date(separateUpcoming.start_date).toLocaleString('default', { month: 'short' })}</span>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h4 style="margin: 0; font-size: 14px; color: #1e293b;">${separateUpcoming.name}</h4>
+                                        <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${new Date(separateUpcoming.start_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} • ${separateUpcoming.location || 'TBA'}</p>
+                                    </div>
+                                    <span class="badge upcoming" style="font-size: 10px; padding: 4px 8px;">Soon</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    nextEventContainer.innerHTML = html;
                 } else {
                     nextEventContainer.innerHTML = `<h3>No Events Scheduled</h3><p class="event-time">Check back later for updates.</p>`;
                 }
@@ -598,10 +624,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Navigation between sections.
-    if (navOverview) navOverview.addEventListener('click', () => showSection('nav-overview'));
-    if (navEvents) navEvents.addEventListener('click', () => showSection('nav-events'));
-    if (navHistory) navHistory.addEventListener('click', () => showSection('nav-history'));
-    if (navReports) navReports.addEventListener('click', () => showSection('nav-reports'));
+    const sidebar = document.querySelector('.sidebar');
+    if (navOverview) navOverview.addEventListener('click', () => {
+        showSection('nav-overview');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+    });
+    if (navEvents) navEvents.addEventListener('click', () => {
+        showSection('nav-events');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+    });
+    if (navHistory) navHistory.addEventListener('click', () => {
+        showSection('nav-history');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+    });
+    if (navReports) navReports.addEventListener('click', () => {
+        showSection('nav-reports');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+    });
 
     // History Search functionality
     const historySearchInput = document.getElementById('historySearchInput');
