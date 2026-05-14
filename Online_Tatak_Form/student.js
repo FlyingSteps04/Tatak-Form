@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                     <div style="flex: 1;">
                                         <h4 style="margin: 0; font-size: 14px; color: #1e293b;">${separateUpcoming.name}</h4>
-                                        <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${new Date(separateUpcoming.start_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} • ${separateUpcoming.location || 'TBA'}</p>
+                                        <p style="margin: 2px 0 0; font-size: 12px; color: #64748b;">${new Date(separateUpcoming.start_date).toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'})} • ${separateUpcoming.location || 'TBA'}</p>
                                     </div>
                                     <span class="badge upcoming" style="font-size: 10px; padding: 4px 8px;">Soon</span>
                                 </div>
@@ -624,22 +624,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Navigation between sections.
-    const sidebar = document.querySelector('.sidebar');
     if (navOverview) navOverview.addEventListener('click', () => {
         showSection('nav-overview');
-        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.style.display = 'none';
+        }
     });
     if (navEvents) navEvents.addEventListener('click', () => {
         showSection('nav-events');
-        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.style.display = 'none';
+        }
     });
     if (navHistory) navHistory.addEventListener('click', () => {
         showSection('nav-history');
-        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.style.display = 'none';
+        }
     });
     if (navReports) navReports.addEventListener('click', () => {
         showSection('nav-reports');
-        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+        if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.style.display = 'none';
+        }
     });
 
     // History Search functionality
