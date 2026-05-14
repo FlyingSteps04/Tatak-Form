@@ -1572,21 +1572,47 @@ body {
 
     /* --- MOBILE HEADER & BURGER ENHANCEMENTS --- */
     .top-bar {
-        padding: 10px 0 !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 25px !important;
+        width: 100% !important;
         background: transparent !important;
         border: none !important;
-        margin-bottom: 10px !important;
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 20px;
+        padding: 0 !important;
     }
 
     .header-left {
-        width: 100% !important;
+        flex: 1 !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        flex-direction: row !important;
+        gap: 12px !important;
+    }
+
+    .top-icons {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .notification-bell {
+        background: none !important;
+        border: none !important;
+        color: #1e293b !important;
+        font-size: 1.25rem !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        width: auto !important;
+        height: auto !important;
+    }
+
+    .logout-circle {
+        display: none !important; /* Keep it clean, logout is in sidebar */
+    }
+
+    .widget-avatar {
+        width: 32px !important;
+        height: 32px !important;
     }
 
     .welcome-text h1 {
@@ -1612,10 +1638,6 @@ body {
         height: auto !important;
         border-radius: 0 !important;
         order: -1 !important;
-    }
-
-    .top-icons {
-        display: none !important;
     }
 
     /* --- GENERATED REPORTS MOBILE UI --- */
