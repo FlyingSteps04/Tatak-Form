@@ -917,3 +917,152 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+/* --- MOBILE RESPONSIVENESS --- */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        height: 100%;
+        z-index: 1001;
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .active-events-grid, .upcoming-events-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .top-icons {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .welcome-text h1 {
+        font-size: 24px;
+    }
+
+    .action-banner {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .history-header {
+        grid-template-columns: 1fr;
+        display: none;
+    }
+
+    .history-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        position: relative;
+    }
+
+    .history-row::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: #f0f2f8;
+    }
+
+    .history-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .history-search {
+        width: 100%;
+    }
+
+    .stats-summary-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .cert-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-download {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-text h1 {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    .qr-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .circular-progress {
+        width: 60px;
+        height: 60px;
+        font-size: 14px;
+    }
+}

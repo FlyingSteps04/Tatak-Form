@@ -31,9 +31,34 @@
 
             <div class="nav-actions">
                 <button class="btn-get-started" onclick="location.href='login.html'">Get Started</button>
+                <button class="hamburger" id="hamburger">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="655609284_1426759675272887_2726655014418430573_n.png">
+                </div>
+                <div class="logo-text">
+                    <strong>Online Tatak Forms</strong>
+                </div>
+            </div>
+            <button class="close-menu" id="closeMenu"><i class="fas fa-times"></i></button>
+        </div>
+        <ul class="mobile-nav-links">
+            <li><a href="#features" onclick="toggleMenu()">Features</a></li>
+            <li><a href="#numbers" onclick="toggleMenu()">By the Numbers</a></li>
+            <li><a href="#how-it-works" onclick="toggleMenu()">How It Works</a></li>
+            <li><a href="#roles" onclick="toggleMenu()">Access Roles</a></li>
+            <li><button class="btn-mobile-login" onclick="location.href='login.html'">Launch App</button></li>
+        </ul>
+    </div>
 
     <section class="hero reveal active">
         <div class="hero-grid">

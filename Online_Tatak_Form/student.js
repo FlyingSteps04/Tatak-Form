@@ -1,4 +1,34 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Mobile Sidebar Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    let overlay = document.querySelector('.sidebar-overlay');
+
+    if (menuToggle && sidebar) {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            overlay.style.display = 'block';
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.style.display = 'none';
+        });
+
+        // Close sidebar on link click
+        sidebar.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.style.display = 'none';
+            });
+        });
+    }
     // --- AUTH CHECK ---
     const token = window.TatakApi.getAuthToken();
     const role = localStorage.getItem('tatak_role');

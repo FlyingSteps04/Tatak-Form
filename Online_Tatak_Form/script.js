@@ -10,6 +10,20 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Mobile Menu Toggle
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const closeMenu = document.getElementById('closeMenu');
+
+    if (hamburger && mobileMenu && closeMenu) {
+        window.toggleMenu = () => {
+            mobileMenu.classList.toggle('active');
+            document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : 'auto';
+        };
+
+        hamburger.addEventListener('click', toggleMenu);
+        closeMenu.addEventListener('click', toggleMenu);
+    }
     const roleButtons = document.querySelectorAll('.role-tab');
     const usernameLabel = document.getElementById('usernameLabel');
     const usernameInput = document.getElementById('usernameInput');
