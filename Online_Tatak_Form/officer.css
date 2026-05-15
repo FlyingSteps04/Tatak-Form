@@ -53,6 +53,19 @@
     animation: slideDown 0.3s ease-out;
 }
 
+@media (max-width: 768px) {
+    .notification-dropdown {
+        position: fixed;
+        left: 5%;
+        right: 5%;
+        top: 80px;
+        width: 90%;
+        margin: 0 auto;
+        transform: none;
+        z-index: 2000;
+    }
+}
+
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1327,3 +1340,4 @@ body {
 /* --- Utilities --- */
 .text-center { text-align: center !important; }
 
+$mobileStyles

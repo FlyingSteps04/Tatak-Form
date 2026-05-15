@@ -67,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Mobile Menu Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
+
     /**
      * Fetches the logged-in officer's profile to determine their organization.
      * Stores organization_id in _officerOrgId for event filtering.
@@ -465,19 +482,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
             <tr>
-                <td>
+                <td data-label="STUDENT">
                     <div class="att-student-cell">
                         <div class="att-avatar" style="overflow: hidden; display: flex; align-items: center; justify-content: center;">${avatarContent}</div>
                         <span class="att-student-name">${fullName}</span>
                     </div>
                 </td>
-                <td class="text-center"><span class="att-id-badge">${idNumber}</span></td>
-                <td class="text-center"><span class="att-course-tag">${course}</span></td>
-                <td class="text-center"><span class="att-status-pill att-status-${statusCls}">${getStatusLabel(status)}</span></td>
-                <td class="text-center">
+                <td class="text-center" data-label="ID NUMBER"><span class="att-id-badge">${idNumber}</span></td>
+                <td class="text-center" data-label="COURSE & YEAR"><span class="att-course-tag">${course}</span></td>
+                <td class="text-center" data-label="STATUS"><span class="att-status-pill att-status-${statusCls}">${getStatusLabel(status)}</span></td>
+                <td class="text-center" data-label="ATTENDANCE">
                     <div style="width: 100px; margin: 0 auto;">
                         <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                            <span style="color: #64748b;">Attendance</span>
+                            <span style="color: #64748b;">Rate</span>
                             <span style="font-weight: 700; color: #1e293b;">${attendanceRate}%</span>
                         </div>
                         <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
@@ -485,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </td>
-                <td class="text-center">
+                <td class="text-center" data-label="ACTION">
                     <button class="att-action-btn" title="Edit Attendance" onclick="window.openEditAttendanceModal(${item.attendance_id}, '${fullName.replace(/'/g, "\\'")}', '${status}')">
                         <i class="far fa-edit"></i>
                     </button>

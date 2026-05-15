@@ -14,6 +14,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Mobile Menu Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
+
     // Populate Organization Dropdowns early
     async function loadAllOrgsForSelects() {
         try {
@@ -1364,22 +1381,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     return `
                         <tr>
-                            <td>
+                            <td data-label="EVENT">
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <img src="${formatImageUrl(orgLogo)}" alt="Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                                     <span style="font-weight: 700; color: #1e293b;">${event.name}</span>
                                 </div>
                             </td>
-                            <td class="text-center"><span class="badge-org">${orgName}</span></td>
-                            <td class="text-center">
+                            <td class="text-center" data-label="ORGANIZATION"><span class="badge-org">${orgName}</span></td>
+                            <td class="text-center" data-label="DATE & TIME">
                                 <div style="display: flex; flex-direction: column; align-items: center;">
                                     <span style="font-weight: 600;">${start.toLocaleDateString()}</span>
                                     <span style="font-size: 0.75rem; color: #64748b;">${startTimeDisplay} - ${endTimeDisplay}</span>
                                 </div>
                             </td>
-                            <td class="text-center">${event.location || 'TBA'}</td>
-                            <td class="text-center"><span class="status ${statusCls}">${status}</span></td>
-                            <td class="text-center">
+                            <td class="text-center" data-label="VENUE">${event.location || 'TBA'}</td>
+                            <td class="text-center" data-label="STATUS"><span class="status ${statusCls}">${status}</span></td>
+                            <td class="text-center" data-label="ACTION">
                                 <div class="action-icons" style="justify-content: center;">
                                     ${actionHtml}
                                 </div>
@@ -1800,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
                 <tr>
-                    <td>
+                    <td data-label="STUDENT">
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div style="width: 42px; height: 42px; flex-shrink: 0; min-width: 42px; min-height: 42px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: #475569; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">${initials}</div>
                             <div style="display: flex; flex-direction: column;">
@@ -1809,10 +1826,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                     </td>
-                    <td class="text-center"><span class="badge-pill-blue">${course}</span></td>
-                    <td class="text-center"><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${orgName}</span></td>
-                    <td class="text-center">${attendanceDisplay}</td>
-                    <td class="text-center">
+                    <td class="text-center" data-label="COURSE"><span class="badge-pill-blue">${course}</span></td>
+                    <td class="text-center" data-label="ORG"><span style="color: #6366f1; font-weight: 700; font-size: 0.85rem;">${orgName}</span></td>
+                    <td class="text-center" data-label="ATTENDANCE">${attendanceDisplay}</td>
+                    <td class="text-center" data-label="ACTION">
                         <div class="action-icons" style="justify-content: center;">
                             <button class="icon-edit" style="background: #eff6ff; color: #2563eb;" onclick="window.openOverrideAttendanceModal('${student.id}', '${student.fname}')" title="Override Attendance"><i class="far fa-edit"></i></button>
                             <button class="icon-delete" style="background: #fff1f2; color: #ef4444;" onclick="window.openDeleteStudentModal('${student.id}')" title="Delete Student"><i class="far fa-trash-alt"></i></button>

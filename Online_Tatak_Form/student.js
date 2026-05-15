@@ -457,7 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (statsContainer) {
                 statsContainer.innerHTML = `
-                    <div class="circular-progress" style="background: conic-gradient(var(--sidebar-bg) ${rate}%, #edf2f7 0);"><span class="percent" style="background: white; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">${rate}%</span></div>
+                    <div class="circular-progress" style="--progress: ${rate}%">
+                        <span class="percent">${rate}%</span>
+                    </div>
                     <div class="stat-boxes">
                         <div class="stat-box attended"><strong>${attendedCount}</strong><span>Attended</span></div>
                         <div class="stat-box missed"><strong>${absentCount}</strong><span>Missed</span></div>
