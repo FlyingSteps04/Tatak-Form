@@ -56,7 +56,13 @@ router.get('/qr/:token', async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const events = await getAllEvents();
-        res.json({ success: true, data: events });
+        // Force dates to ISO format for consistent frontend parsing
+        const formattedEvents = events.map(e => ({
+            ...e,
+            start_date: e.start_date ? new Date(e.start_date + ' UTC').toISOString() : e.start_date,
+            end_date: e.end_date ? new Date(e.end_date + ' UTC').toISOString() : e.end_date
+        }));
+        res.json({ success: true, data: formattedEvents });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -115,7 +121,13 @@ router.post('/', authenticateToken, authenticateRole("Admin", "Officer"), async 
             console.error('Failed to send event creation notifications:', notifyErr);
         }
 
-        return res.json({ success: true, data: event, qr_url: qrPublicPath });
+        const formattedEvent = {
+            ...event,
+            start_date: event.start_date ? new Date(event.start_date + ' UTC').toISOString() : event.start_date,
+            end_date: event.end_date ? new Date(event.end_date + ' UTC').toISOString() : event.end_date
+        };
+
+        return res.json({ success: true, data: formattedEvent, qr_url: qrPublicPath });
 
     } catch (error) {
         console.error("🔥 Route Error:", error);

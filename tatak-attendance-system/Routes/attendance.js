@@ -105,14 +105,15 @@ router.post('/scan', authenticateToken, async (req, res) => {
 
         // 4. Time Verification
         const now = new Date();
-        const start = new Date(event.start_date);
-        const end = event.end_date ? new Date(event.end_date) : null;
+        // Parse raw string from DB as UTC
+        const start = new Date(event.start_date + ' UTC');
+        const end = event.end_date ? new Date(event.end_date + ' UTC') : null;
 
         if (now < start) {
             const timeDiff = Math.ceil((start - now) / (1000 * 60));
             return res.status(400).json({ 
                 error: `Event has not started yet. Please try again in ${timeDiff} minutes.`,
-                starts_at: event.start_date 
+                starts_at: start.toISOString() 
             });
         }
         if (end && now > end) {
